@@ -27,7 +27,7 @@ class ParObsPotentialFieldsPrPAgent:
         self.next_goal_node: Node = next_goal_node
         self.first_goal_node: Node = next_goal_node
         self.closed_goal_nodes: List[Node] = []
-        self.plan = []
+        self.plan = None
         self.plan_succeeded = False
         self.nodes = kwargs['nodes']
         self.nodes_dict = kwargs['nodes_dict']
@@ -128,6 +128,7 @@ class ParObsPotentialFieldsPrPAgent:
 
     def _execute_a_star(self, h_agents):
         nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
+        # nei_h_agents_names = [a.name for a in nei_h_agents]
         sub_results = create_sub_results(nei_h_agents)
         v_constr_dict, e_constr_dict, perm_constr_dict = build_constraints(self.nodes, sub_results)
 
@@ -192,6 +193,7 @@ class AlgParObsPotentialFieldsPrPSeq:
         self.h_dict = None
         self.h_func = None
         self.curr_iteration = None
+        self.agents_names_with_new_goals = []
 
         # RHCR part
         self.h, self.w = set_h_and_w(self)
@@ -213,7 +215,7 @@ class AlgParObsPotentialFieldsPrPSeq:
         finished_list = []
         unfinished_list = []
         for agent in self.agents:
-            if len(agent.plan) == 0:
+            if agent.plan is not None and len(agent.plan) == 0:
                 finished_list.append(agent)
             else:
                 unfinished_list.append(agent)
@@ -232,7 +234,7 @@ class AlgParObsPotentialFieldsPrPSeq:
         while there_is_conf:
             there_is_conf = False
             for agent1, agent2 in combinations(self.agents, 2):
-                if not two_plans_have_no_vc(agent1.plan, agent2.plan):
+                if not two_plans_have_no_confs(agent1.plan, agent2.plan):
                     there_is_conf = True
                     agent1.set_istay()
                     agent2.set_istay()
@@ -310,6 +312,7 @@ class AlgParObsPotentialFieldsPrPSeq:
         self.curr_iteration = kwargs['iteration']
 
         # update the current state
+        self.agents_names_with_new_goals = observations['agents_names_with_new_goals']
         for agent in self.agents:
             agent.update_obs(observations[agent.name], agents_dict=self.agents_dict)
 
@@ -339,9 +342,9 @@ class AlgParObsPotentialFieldsPrPSeq:
 def main():
     # Alg params
     # alg_name = 'PrP'
-    # alg_name = 'PF-PrP'
+    alg_name = 'PF-PrP'
     # alg_name = 'ParObs-PrP'
-    alg_name = 'ParObs-PF-PrP'
+    # alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
         'PrP': {},
@@ -367,8 +370,8 @@ def main():
             # 'pf_size': 'h',
             'pf_size': 'const',
             # 'pf_size_value': 5,
-            'pf_size_value': 3,
-            # 'pf_size_value': 2,
+            # 'pf_size_value': 3,
+            'pf_size_value': 2,
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
@@ -385,7 +388,7 @@ def main():
         seed=123,
         PLOT_PER=1,
         PLOT_RATE=0.001,
-        PLOT_FROM=0,
+        PLOT_FROM=50,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
@@ -393,12 +396,12 @@ def main():
 
         # FOR ENV
         iterations=200,
-        n_agents=170,
+        n_agents=100,
         n_problems=1,
 
         # Map
-        img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='empty-32-32.map',  # 32-32
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32

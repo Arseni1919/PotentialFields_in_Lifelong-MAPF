@@ -82,7 +82,7 @@ class EnvLifelongMAPF:
             available_nodes = [node for node in self.nodes if node not in self.start_nodes]
             self.first_goal_nodes = random.sample(available_nodes, self.n_agents)
         self._create_agents()
-        observations = self._get_observations([])
+        observations = self._get_observations([a.name for a in self.agents])
         return observations
 
     def _get_observations(self, agents_names_with_new_goals):

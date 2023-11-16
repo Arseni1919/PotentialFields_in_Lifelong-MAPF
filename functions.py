@@ -47,11 +47,20 @@ def check_if_nei_pos(agents):
             raise RuntimeError('wow wow wow! Not nei pos!')
 
 
-def two_plans_have_no_vc(plan1, plan2):
+def two_plans_have_no_confs(plan1, plan2):
     min_len = min(len(plan1), len(plan2))
+    prev1 = plan1[0]
+    prev2 = plan2[0]
     for i in range(min_len):
         vertex1 = plan1[i]
         vertex2 = plan2[i]
+        if i > 0:
+            edge1 = (prev1.xy_name, vertex1.xy_name)
+            edge2 = (vertex2.xy_name, prev2.xy_name)
+            if edge1 == edge2:
+                return False
+        prev1 = vertex1
+        prev2 = vertex2
         if vertex1.xy_name == vertex2.xy_name:
             return False
     return True
