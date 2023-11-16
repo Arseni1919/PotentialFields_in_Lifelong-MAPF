@@ -342,9 +342,9 @@ class AlgParObsPotentialFieldsPrPSeq:
 def main():
     # Alg params
     # alg_name = 'PrP'
-    alg_name = 'PF-PrP'
+    # alg_name = 'PF-PrP'
     # alg_name = 'ParObs-PrP'
-    # alg_name = 'ParObs-PF-PrP'
+    alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
         'PrP': {},
@@ -389,20 +389,21 @@ def main():
         PLOT_PER=1,
         PLOT_RATE=0.001,
         PLOT_FROM=50,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
         iterations=200,
-        n_agents=100,
+        # iterations=100,
+        n_agents=150,
         n_problems=1,
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
     )
