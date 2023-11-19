@@ -126,13 +126,6 @@ class AlgLNS2Seq(AlgParObsPotentialFieldsPrPSeq):
         for agent in self.agents:
             agent.build_plan(h_agents)
             h_agents.append(agent)
-            # if not agent.plan_succeeded:
-                # need_to_shuffle = True
-        # IStay
-        # self._implement_istay()
-        #
-        # if need_to_shuffle:
-        #     random.shuffle(self.agents)
 
         while (num_of_confs := self._build_G_c()) > 0:
             V_v, v = self._select_random_conf_v()
@@ -181,7 +174,8 @@ def main():
             # For PF
             # 'pf_weight': 0.5,
             # 'pf_weight': 1,
-            'pf_weight': 3,
+            # 'pf_weight': 3,
+            'pf_weight': 5,
             # 'pf_size': 'h',
             'pf_size': 3,
             # 'pf_size': 5,
@@ -219,8 +213,8 @@ def main():
         # Map
         # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        img_dir='random-32-32-20.map',  # 32-32
-        # img_dir='room-32-32-4.map',  # 32-32
+        # img_dir='random-32-32-20.map',  # 32-32
+        img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
     )
 
