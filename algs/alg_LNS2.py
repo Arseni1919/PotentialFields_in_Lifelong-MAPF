@@ -15,37 +15,6 @@ class LNS2Agent(ParObsPotentialFieldsPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
 
-    # def _execute_a_star(self, h_agents):
-    #     sub_results = create_sub_results(h_agents)
-    #     v_constr_dict, e_constr_dict, perm_constr_dict = build_constraints(self.nodes, sub_results)
-    #
-    #     # build nei-PFs
-    #     if self.pf_weight == 0:
-    #         pf_cost_func = None
-    #     else:
-    #         nei_pfs, max_plan_len = self._build_nei_pfs(h_agents)
-    #         pf_cost_func = self._build_pf_cost_func(h_agents, nei_pfs, max_plan_len)
-    #         self.nei_pfs = nei_pfs
-    #
-    #     new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=self.next_goal_node,
-    #                                     nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func,
-    #                                     v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
-    #                                     perm_constr_dict=perm_constr_dict,
-    #                                     agent_name=self.name,
-    #                                     pf_weight=self.pf_weight, pf_cost_func=pf_cost_func,
-    #                                     k_time=self.h)
-    #     if new_plan is not None:
-    #         # pop out the current location, because you will order to move to the next location
-    #         self.plan_succeeded = True
-    #         new_plan.pop(0)
-    #         self.plan = new_plan
-    #         self._fulfill_the_plan()
-    #         self._create_pf_field()
-    #     else:
-    #         # self.plan = None
-    #         # IStay
-    #         self.set_istay()
-
 
 class AlgLNS2Seq(AlgParObsPotentialFieldsPrPSeq):
     """
@@ -183,20 +152,23 @@ def main():
     big_N = 5
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
-    alg_name = 'ParObs-LNS2'
-    # alg_name = 'ParObs-PF-LNS2'
+    # alg_name = 'ParObs-LNS2'
+    alg_name = 'ParObs-PF-LNS2'
 
     params_dict = {
         'LNS2': {'big_N': big_N},
         'PF-LNS2': {
             'big_N': big_N,
             # For PF
-            'pf_weight': 1,
+            'pf_weight': 0.5,
+            # 'pf_weight': 1,
+            # 'pf_weight': 3,
             # 'pf_weight': 2,
-            'pf_size': 'const',
-            # 'pf_size_value': 5,
-            # 'pf_size_value': 3,
-            'pf_size_value': 2,
+            # 'pf_size': 'h',
+            'pf_size': 3,
+            # 'pf_size': 5,
+            # 'pf_size': 2,
+            'pf_shape': 2,
         },
         'ParObs-LNS2': {
             'big_N': big_N,
@@ -208,13 +180,13 @@ def main():
             'big_N': big_N,
             # For PF
             # 'pf_weight': 0.5,
-            'pf_weight': 1,
-            # 'pf_weight': 3,
+            # 'pf_weight': 1,
+            'pf_weight': 3,
             # 'pf_size': 'h',
-            'pf_size': 'const',
-            # 'pf_size_value': 5,
-            'pf_size_value': 3,
-            # 'pf_size_value': 2,
+            'pf_size': 3,
+            # 'pf_size': 5,
+            # 'pf_size': 2,
+            'pf_shape': 2,
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
@@ -246,8 +218,8 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
     )

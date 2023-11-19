@@ -41,10 +41,6 @@ def get_node(successor_xy_name, node_current, nodes, nodes_dict, open_nodes, clo
              perm_constr_dict, max_final_time, **kwargs):
     new_t = node_current.t + 1
 
-    # if 'short_a_star_list' in kwargs and len(kwargs['short_a_star_list']) > 0:
-    #     if successor_xy_name not in kwargs['short_a_star_list']:
-    #         return None, ''
-
     if v_constr_dict:
         if new_t in v_constr_dict[successor_xy_name]:
             return None, ''
@@ -88,35 +84,13 @@ def k_time_check(node_current, **kwargs):
     # return node_current.t >= kwargs['k_time'] if 'k_time' in kwargs else False
 
 
-def set_pf_weight_and_pf_cost_func(**kwargs):
-    if 'pf_weight' in kwargs:
-        pf_weight, pf_cost_func = kwargs['pf_weight'], kwargs['pf_cost_func']
-    else:
-        pf_weight, pf_cost_func = 0, None
-    return pf_weight, pf_cost_func
-
-
-def build_successor_current_g(magnet_w, mag_cost_func, node_successor, successor_current_t, node_current):
-    if magnet_w > 0:
-        mag_cost = mag_cost_func(node_successor.x, node_successor.y, successor_current_t)
-        successor_current_g = node_current.g + 1 + magnet_w * mag_cost
+def build_successor_current_g(nei_pfs, node_successor, successor_current_t, node_current):
+    if nei_pfs is not None and successor_current_t < nei_pfs.shape[2]:
+        mag_cost = nei_pfs[node_successor.x, node_successor.y, successor_current_t]
+        successor_current_g = node_current.g + 1 + mag_cost
     else:
         successor_current_g = successor_current_t
     return successor_current_g
-
-
-def build_successor_h(h_func, node_successor, successor_current_t, goal, magnet_w, mag_cost_func, nodes_dict):
-    successor_h = h_func(node_successor, goal)
-    # if magnet_w > 0:
-    #     costs_list = []
-    #     for nei_name in node_successor.neighbours:
-    #         nei_node = nodes_dict[nei_name]
-    #         mag_cost = mag_cost_func(nei_node.x, nei_node.y, successor_current_t+1)
-    #         costs_list.append(mag_cost)
-    #     successor_h = magnet_w * min(costs_list) + h_func(node_successor, goal)
-    # else:
-    #     successor_h = h_func(node_successor, goal)
-    return successor_h
 
 
 def a_star_xyt(start, goal, nodes, h_func,
@@ -129,7 +103,7 @@ def a_star_xyt(start, goal, nodes, h_func,
     start_time = time.time()
 
     # magnets part
-    magnet_w, mag_cost_func = set_pf_weight_and_pf_cost_func(**kwargs)
+    nei_pfs = kwargs['nei_pfs'] if 'nei_pfs' in kwargs else None
 
     # start, goal, nodes = deepcopy_nodes(start, goal, nodes)  # heavy!
     start, goal, nodes = reset_nodes(start, goal, nodes, **kwargs)
@@ -176,7 +150,7 @@ def a_star_xyt(start, goal, nodes, h_func,
                 continue
 
             successor_current_t = node_current.t + 1  # h(now, next)
-            successor_current_g = build_successor_current_g(magnet_w, mag_cost_func, node_successor, successor_current_t, node_current)
+            successor_current_g = build_successor_current_g(nei_pfs, node_successor, successor_current_t, node_current)
 
             # INSIDE OPEN LIST
             if node_successor_status == 'open_nodes':
@@ -192,7 +166,7 @@ def a_star_xyt(start, goal, nodes, h_func,
 
             # NOT IN CLOSED AND NOT IN OPEN LISTS
             else:
-                node_successor.h = build_successor_h(h_func, node_successor, successor_current_t, goal, magnet_w, mag_cost_func, nodes_dict)
+                node_successor.h = h_func(node_successor, goal)
             node_successor.t = successor_current_t
             node_successor.g = successor_current_g
             node_successor.parent = node_current

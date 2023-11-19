@@ -47,6 +47,7 @@ class ParObsPotentialFieldsPrPAgent:
         self.prev_node = obs['prev_node']
         self.next_goal_node = obs['next_goal_node']
         self.closed_goal_nodes = obs['closed_goal_nodes']
+        self.heuristic_value = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
 
     def clean_nei(self):
         self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict = [], {}, {}, {}
@@ -58,6 +59,7 @@ class ParObsPotentialFieldsPrPAgent:
         self.nei_h_dict[nei_agent.name] = nei_agent.heuristic_value
 
     def build_plan(self, h_agents):
+        # self._execute_a_star(h_agents)
         if self.plan is None or len(self.plan) == 0:
             self._execute_a_star(h_agents)
         return self.plan
@@ -73,45 +75,74 @@ class ParObsPotentialFieldsPrPAgent:
         if self.pf_weight != 0:
             self.pf_field = self.pf_field[:, :, 1:]
             self.correct_nei_pfs()
-        self.heuristic_value = self.h_dict[self.next_goal_node.xy_name][next_node.x, next_node.y]
         return next_node.xy_name
 
+    def _get_weight(self, nei_heuristic_value):
+        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
+        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+
+        relative_length = (nei_heuristic_value / self.heuristic_value) / 2
+
+        # if 0 <= relative_length < 0.2:
+        #     return 0
+        # if 0.2 <= relative_length < 0.4:
+        #     return 0.25 * self.pf_weight
+        # if 0.4 <= relative_length < 0.6:
+        #     return 0.5 * self.pf_weight
+        # if 0.6 <= relative_length < 0.8:
+        #     return 0.75 * self.pf_weight
+        # if 0.8 <= relative_length:
+        #     return self.pf_weight
+
+        if 0 <= relative_length < 0.2:
+            return self.pf_weight
+        if 0.2 <= relative_length < 0.4:
+            return 0.75 * self.pf_weight
+        if 0.4 <= relative_length < 0.6:
+            return 0.5 * self.pf_weight
+        if 0.6 <= relative_length < 0.8:
+            return 0.25 * self.pf_weight
+        if 0.8 <= relative_length:
+            return 0
+
+        return self.pf_weight
+
+    # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
         if len(h_agents) == 0:
             return None, None
         max_plan_len = max([len(agent.plan) for agent in h_agents])
         nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
+        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
+        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
         for nei_agent in h_agents:
             up_until_t = len(nei_agent.plan)
-            nei_pfs[:, :, :up_until_t] += nei_agent.pf_field
+            weight = self._get_weight(nei_heuristic_value=nei_agent.heuristic_value)
+            nei_pfs[:, :, :up_until_t] += weight * nei_agent.pf_field
         max_number_in_matrix = np.max(nei_pfs)
-        if max_number_in_matrix > 0:
-            nei_pfs /= max_number_in_matrix
+        # if max_number_in_matrix > 0:
+        #     nei_pfs /= max_number_in_matrix
+        # nei_pfs *= self.pf_weight
         return nei_pfs, max_plan_len
 
-    def _build_pf_cost_func(self, h_agents, nei_pfs, max_plan_len):
-        if len(h_agents) == 0:
-            return lambda x, y, t: 0
-        return lambda x, y, t: nei_pfs[x, y, t] if t < max_plan_len else 0
-
+    # POTENTIAL FIELDS ****************************** pf_size  ******************************
+    # POTENTIAL FIELDS ****************************** pf_shape ******************************
     def _get_gradient_list(self):
         pf_size = self.params['pf_size']
-        # divider = 1.5
-        divider = 2
-        # divider = 4
+        pf_shape = self.params['pf_shape']
         if pf_size == 'h':
             h_value = self.h_func(self.start_node, self.next_goal_node)
-        elif pf_size == 'const':
-            pf_size_value = self.params['pf_size_value']
-            h_value = divider ** pf_size_value
         else:
-            raise RuntimeError('define a magnet_type!')
+            h_value = pf_shape ** pf_size
+        biggest_value = h_value
         gradient_list = [h_value]
         while h_value > 1:
-            h_value /= divider
+            h_value /= pf_shape
             gradient_list.append(h_value)
+        gradient_list = [i / biggest_value for i in gradient_list]
         return gradient_list
 
+    # POTENTIAL FIELDS ************************* pf_shape of circle ************************
     def _create_pf_field(self):
         if self.curr_node.xy_name == self.next_goal_node.xy_name: return
         if self.pf_weight == 0: return
@@ -134,10 +165,9 @@ class ParObsPotentialFieldsPrPAgent:
 
         # build nei-PFs
         if self.pf_weight == 0:
-            pf_cost_func = None
+            self.nei_pfs = None
         else:
             nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
-            pf_cost_func = self._build_pf_cost_func(nei_h_agents, nei_pfs, max_plan_len)
             self.nei_pfs = nei_pfs
 
         new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=self.next_goal_node,
@@ -145,8 +175,7 @@ class ParObsPotentialFieldsPrPAgent:
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
                                         agent_name=self.name,
-                                        pf_weight=self.pf_weight, pf_cost_func=pf_cost_func,
-                                        k_time=self.h)
+                                        nei_pfs=self.nei_pfs, k_time=self.w)
         if new_plan is not None:
             # pop out the current location, because you will order to move to the next location
             self.plan_succeeded = True
@@ -169,6 +198,7 @@ class ParObsPotentialFieldsPrPAgent:
         self._fulfill_the_plan()
         self._create_pf_field()
         self.plan_succeeded = False
+        print(f' \t --- [{self.name}]: I stay!')
 
 
 class AlgParObsPotentialFieldsPrPSeq:
@@ -224,7 +254,28 @@ class AlgParObsPotentialFieldsPrPSeq:
 
     def _reshuffle_agents(self):
         # print(f'\n**************** random reshuffle ****************\n')
-        random.shuffle(self.agents)
+
+        # agents = self.agents[:]
+        # agents.sort(reverse=True, key=lambda a: a.heuristic_value)
+        # half = round(len(agents) / 2)
+        # h_agents = agents[:half]
+        # l_agents = agents[half:]
+        # random.shuffle(h_agents)
+        # random.shuffle(l_agents)
+        # # h_agents.extend(l_agents)
+        # # self.agents = h_agents
+        # l_agents.extend(h_agents)
+        # self.agents = l_agents
+
+        stuck_agents = [agent for agent in self.agents if not agent.plan_succeeded]
+        good_agents = [agent for agent in self.agents if agent.plan_succeeded]
+        random.shuffle(stuck_agents)
+        random.shuffle(good_agents)
+        stuck_agents.extend(good_agents)
+        self.agents = stuck_agents
+
+        # random.shuffle(self.agents)
+
         for agent in self.agents:
             agent.plan = None
 
@@ -353,10 +404,10 @@ def main():
             'pf_weight': 1,
             # 'pf_weight': 2,
             # 'pf_size': 'h',
-            'pf_size': 'const',
-            # 'pf_size_value': 5,
-            'pf_size_value': 3,
-            # 'pf_size_value': 2,
+            'pf_size': 3,
+            # 'pf_size': 5,
+            # 'pf_size': 2,
+            'pf_shape': 2,
         },
         'ParObs-PrP': {
             # For RHCR
@@ -366,12 +417,15 @@ def main():
         'ParObs-PF-PrP': {
             # For PF
             # 'pf_weight': 0.5,
-            'pf_weight': 1,
+            # 'pf_weight': 1,
+            # 'pf_weight': 3,
+            'pf_weight': 5,
+            # 'pf_weight': 10,
             # 'pf_size': 'h',
-            'pf_size': 'const',
-            # 'pf_size_value': 5,
-            # 'pf_size_value': 3,
-            'pf_size_value': 2,
+            # 'pf_size': 5,
+            'pf_size': 3,
+            # 'pf_size': 2,
+            'pf_shape': 2,
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
@@ -411,3 +465,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+

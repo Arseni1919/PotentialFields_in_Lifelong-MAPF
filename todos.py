@@ -21,13 +21,13 @@ DONE:
     - if finished, wait to the next k-step iteration
     - for those who did not have a path -> use IStay
 - correct the PrP and PF-PrP
+- implement LNS2 with Collision-Based Neighborhoods (CBN)
 
 ##########################################
 ##########################################
 TODO:
 
-- implement LNS2 with Collision-Based Neighborhoods (CBN)
-- improve PF
+- improve PF (agent creates all PF)
 - maybe implement learning for the PF parameters with RL
 - execute big experiments
 - write a paper
