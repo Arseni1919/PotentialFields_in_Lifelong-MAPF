@@ -7,7 +7,7 @@ from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_LL_MAPF import EnvLifelongMAPF
 
 
-class ParObsPotentialFieldsPrPAgent:
+class ParObsPFPrPAgent:
     """
     Public methods:
     .update_obs(obs, **kwargs)
@@ -136,7 +136,7 @@ class ParObsPotentialFieldsPrPAgent:
     # POTENTIAL FIELDS ****************************** pf_shape ******************************
     def _get_gradient_list(self):
         pf_size = self.params['pf_size']
-        pf_shape = self.params['pf_shape']
+        pf_shape = self.params['pf_shape'] if 'pf_shape' in self.params else 2
         if pf_size == 'h':
             h_value = self.h_func(self.start_node, self.next_goal_node)
         else:
@@ -208,7 +208,7 @@ class ParObsPotentialFieldsPrPAgent:
         print(f' \t --- [{self.name}]: I stay!')
 
 
-class AlgParObsPotentialFieldsPrPSeq:
+class AlgParObsPFPrPSeq:
     """
     Public methods:
     .first_init(env)
@@ -222,8 +222,6 @@ class AlgParObsPotentialFieldsPrPSeq:
         self.env = None
         self.agents = None
         self.agents_dict = {}
-        self.start_nodes = None
-        self.first_goal_nodes = None
         self.n_agents = None
         self.map_dim = None
         self.nodes, self.nodes_dict = None, None
@@ -346,10 +344,15 @@ class AlgParObsPotentialFieldsPrPSeq:
         self.h_dict = env.h_dict
         self.h_func = env.h_func
 
+        self.agents = None
+        self.agents_dict = {}
+        self.curr_iteration = None
+        self.agents_names_with_new_goals = []
+
     def reset(self):
-        self.agents: List[ParObsPotentialFieldsPrPAgent] = []
+        self.agents: List[ParObsPFPrPAgent] = []
         for env_agent in self.env.agents:
-            new_agent = ParObsPotentialFieldsPrPAgent(
+            new_agent = ParObsPFPrPAgent(
                 num=env_agent.num, start_node=env_agent.start_node, next_goal_node=env_agent.next_goal_node,
                 nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func, h_dict=self.h_dict,
                 map_dim=self.map_dim, params=self.params
@@ -399,10 +402,10 @@ class AlgParObsPotentialFieldsPrPSeq:
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
 def main():
     # Alg params
-    # alg_name = 'PrP'
+    alg_name = 'PrP'
     # alg_name = 'PF-PrP'
     # alg_name = 'ParObs-PrP'
-    alg_name = 'ParObs-PF-PrP'
+    # alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
         'PrP': {},
@@ -439,7 +442,7 @@ def main():
         },
     }
 
-    alg = AlgParObsPotentialFieldsPrPSeq(params=params_dict[alg_name], alg_name=alg_name)
+    alg = AlgParObsPFPrPSeq(params=params_dict[alg_name], alg_name=alg_name)
     test_single_alg(
         alg,
 
@@ -450,15 +453,15 @@ def main():
         PLOT_PER=1,
         PLOT_RATE=0.001,
         PLOT_FROM=50,
-        # middle_plot=True,
-        middle_plot=False,
+        middle_plot=True,
+        # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
         iterations=200,
         # iterations=100,
-        n_agents=150,
+        n_agents=50,
         n_problems=1,
 
         # Map

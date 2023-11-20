@@ -31,11 +31,9 @@ def use_profiler(save_dir):
     return decorator
 
 
-def set_seed(random_seed_bool, i_seed=1):
+def set_seed(random_seed_bool, seed=1):
     if random_seed_bool:
         seed = random.randint(0, 1000)
-    else:
-        seed = i_seed
     random.seed(seed)
     np.random.seed(seed)
     print(f'[SEED]: --- {seed} ---')

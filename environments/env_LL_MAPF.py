@@ -48,10 +48,12 @@ class EnvLifelongMAPF:
         self.n_agents = n_agents
         self.agents: List[SimAgent] = None
         self.img_dir = img_dir
-        self.map_dim = get_dims_from_pic(img_dir=img_dir, path='../maps')
-        self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path='../maps', show_map=False)
+        path_to_maps = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
+        self.map_dim = get_dims_from_pic(img_dir=img_dir, path=path_to_maps)
+        self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
+        path_to_heuristics = kwargs['path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
         self.h_dict = parallel_build_heuristic_for_entire_map(self.nodes, self.map_dim,
-                                                              img_dir=img_dir, path='../logs_for_heuristics')
+                                                              img_dir=img_dir, path=path_to_heuristics)
         self.h_func = h_func_creator(self.h_dict)
 
         # for a single run
@@ -59,11 +61,12 @@ class EnvLifelongMAPF:
         self.first_goal_nodes = None
 
         # for plotting
-        self.plot_per = kwargs['plot_per']
-        self.plot_rate = kwargs['plot_rate']
         self.final_plot = kwargs['final_plot']
         self.middle_plot = kwargs['middle_plot']
         if self.middle_plot:
+            self.plot_per = kwargs['plot_per']
+            self.plot_rate = kwargs['plot_rate']
+            self.plot_from = kwargs['plot_from']
             # self.fig, self.ax = plt.subplots()
             # self.fig, self.ax = plt.subplots(figsize=(14, 7))
             # self.fig, self.ax = plt.subplots(figsize=(7, 7))
@@ -151,11 +154,10 @@ class EnvLifelongMAPF:
         return observations, rewards, termination, info
 
     def render(self, info):
-        if info['i'] >= info['PLOT_FROM']:
-            if self.middle_plot and info['i'] % self.plot_per == 0:
-                plot_env_field(self.ax[0], info)
-                plot_magnet_agent_view(self.ax[1], info)
-                plt.pause(self.plot_rate)
+        if self.middle_plot and info['i'] >= self.plot_from and info['i'] % self.plot_per == 0:
+            plot_env_field(self.ax[0], info)
+            plot_magnet_agent_view(self.ax[1], info)
+            plt.pause(self.plot_rate)
         n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in self.agents])
         print(f"\n\n[{info['alg_name']}] PROBLEM: {info['i_problem'] + 1}, ITERATION: {info['i'] + 1}\n"
               f"Total closed goals --------------------------------> {n_closed_goals}\n"

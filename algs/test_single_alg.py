@@ -37,7 +37,8 @@ def test_single_alg(alg, **kwargs):
     set_seed(random_seed, seed)
     env = EnvLifelongMAPF(
         n_agents=n_agents, img_dir=img_dir,
-        plot_per=PLOT_PER, plot_rate=PLOT_RATE, middle_plot=middle_plot, final_plot=final_plot,
+        plot_per=PLOT_PER, plot_rate=PLOT_RATE, plot_from=PLOT_FROM,
+        middle_plot=middle_plot, final_plot=final_plot,
     )
 
     # !!!!!!!!!!!!!!!!!
@@ -52,7 +53,6 @@ def test_single_alg(alg, **kwargs):
         'img_dir': img_dir,
         'map_dim': env.map_dim,
         'img_np': env.img_np,
-        'PLOT_FROM': PLOT_FROM,
     }
 
     # loop for n_agents

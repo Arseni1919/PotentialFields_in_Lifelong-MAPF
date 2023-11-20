@@ -8,15 +8,15 @@ from tools_for_plotting import *
 from algs.test_single_alg import test_single_alg
 from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_LL_MAPF import EnvLifelongMAPF
-from algs.alg_ParObs_PF_PrP_seq import ParObsPotentialFieldsPrPAgent, AlgParObsPotentialFieldsPrPSeq
+from algs.alg_ParObs_PF_PrP_seq import ParObsPFPrPAgent, AlgParObsPFPrPSeq
 
 
-class LNS2Agent(ParObsPotentialFieldsPrPAgent):
+class LNS2Agent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
 
 
-class AlgLNS2Seq(AlgParObsPotentialFieldsPrPSeq):
+class AlgLNS2Seq(AlgParObsPFPrPSeq):
     """
     Public methods:
     .first_init(env)
@@ -32,7 +32,7 @@ class AlgLNS2Seq(AlgParObsPotentialFieldsPrPSeq):
         self.conf_neighbourhood = None
 
     def reset(self):
-        self.agents: List[ParObsPotentialFieldsPrPAgent] = []
+        self.agents: List[ParObsPFPrPAgent] = []
         for env_agent in self.env.agents:
             new_agent = LNS2Agent(
                 num=env_agent.num, start_node=env_agent.start_node, next_goal_node=env_agent.next_goal_node,
