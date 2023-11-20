@@ -22,14 +22,14 @@ DONE:
     - for those who did not have a path -> use IStay
 - correct the PrP and PF-PrP
 - implement LNS2 with Collision-Based Neighborhoods (CBN)
+- improve PF (agent creates all PF)
 
 ##########################################
 ##########################################
 TODO:
 
-- improve PF (agent creates all PF)
-- maybe implement learning for the PF parameters with RL
 - execute big experiments
+- maybe implement learning for the PF parameters with RL
 - write a paper
 - submit to a conference
 

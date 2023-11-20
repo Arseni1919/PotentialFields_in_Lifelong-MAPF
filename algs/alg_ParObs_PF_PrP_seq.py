@@ -81,29 +81,36 @@ class ParObsPotentialFieldsPrPAgent:
         # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
         # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 
-        relative_length = (nei_heuristic_value / self.heuristic_value) / 2
+        pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'short_paths'
+        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'long_paths'
+        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'uniform'
+        # Prefer Longer Paths
+        if pf_weight_pref == 'long_paths':
+            relative_length = (nei_heuristic_value / self.heuristic_value) / 2
+            if 0 <= relative_length < 0.2:
+                return 0
+            if 0.2 <= relative_length < 0.4:
+                return 0.25 * self.pf_weight
+            if 0.4 <= relative_length < 0.6:
+                return 0.5 * self.pf_weight
+            if 0.6 <= relative_length < 0.8:
+                return 0.75 * self.pf_weight
+            if 0.8 <= relative_length:
+                return self.pf_weight
 
-        # if 0 <= relative_length < 0.2:
-        #     return 0
-        # if 0.2 <= relative_length < 0.4:
-        #     return 0.25 * self.pf_weight
-        # if 0.4 <= relative_length < 0.6:
-        #     return 0.5 * self.pf_weight
-        # if 0.6 <= relative_length < 0.8:
-        #     return 0.75 * self.pf_weight
-        # if 0.8 <= relative_length:
-        #     return self.pf_weight
-
-        if 0 <= relative_length < 0.2:
-            return self.pf_weight
-        if 0.2 <= relative_length < 0.4:
-            return 0.75 * self.pf_weight
-        if 0.4 <= relative_length < 0.6:
-            return 0.5 * self.pf_weight
-        if 0.6 <= relative_length < 0.8:
-            return 0.25 * self.pf_weight
-        if 0.8 <= relative_length:
-            return 0
+        # Prefer Shorter Paths
+        if pf_weight_pref == 'short_paths':
+            relative_length = (nei_heuristic_value / self.heuristic_value) / 2
+            if 0 <= relative_length < 0.2:
+                return self.pf_weight
+            if 0.2 <= relative_length < 0.4:
+                return 0.75 * self.pf_weight
+            if 0.4 <= relative_length < 0.6:
+                return 0.5 * self.pf_weight
+            if 0.6 <= relative_length < 0.8:
+                return 0.25 * self.pf_weight
+            if 0.8 <= relative_length:
+                return 0
 
         return self.pf_weight
 
@@ -456,10 +463,10 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
-        img_dir='maze-32-32-2.map',  # 32-32
+        # img_dir='maze-32-32-2.map',  # 32-32
     )
 
 
