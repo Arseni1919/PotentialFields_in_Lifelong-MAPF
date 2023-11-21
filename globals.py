@@ -17,6 +17,7 @@ import pstats
 import re
 import heapq
 import os
+import operator
 
 import matplotlib.pyplot as plt
 import matplotlib

@@ -78,12 +78,13 @@ class ParObsPFPrPAgent:
         return next_node.xy_name
 
     def _get_weight(self, nei_heuristic_value):
-        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
-        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 
-        pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'short_paths'
+        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'short_paths'
         # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'long_paths'
-        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'uniform'
+        pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'uniform'
+        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'my_h_long'
+        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'my_h_short'
+
         # Prefer Longer Paths
         if pf_weight_pref == 'long_paths':
             relative_length = (nei_heuristic_value / self.heuristic_value) / 2
@@ -111,6 +112,23 @@ class ParObsPFPrPAgent:
                 return 0.25 * self.pf_weight
             if 0.8 <= relative_length:
                 return 0
+
+        if pf_weight_pref == 'my_h_long':
+            big_size = max(self.map_dim) / 2
+            if self.heuristic_value < big_size:
+                partial = 1 - (self.heuristic_value / big_size)
+                return partial * self.pf_weight
+            return 0
+
+        if pf_weight_pref == 'my_h_short':
+            big_size = max(self.map_dim) / 2
+            if self.heuristic_value < big_size:
+                partial = self.heuristic_value / big_size
+                return partial * self.pf_weight
+            return self.pf_weight
+
+        if pf_weight_pref == 'uniform':
+            return self.pf_weight
 
         return self.pf_weight
 
@@ -205,7 +223,7 @@ class ParObsPFPrPAgent:
         self._fulfill_the_plan()
         self._create_pf_field()
         self.plan_succeeded = False
-        print(f' \t --- [{self.name}]: I stay!')
+        # print(f' \r\t --- [{self.name}]: I stay!', end='')
 
 
 class AlgParObsPFPrPSeq:
@@ -232,6 +250,9 @@ class AlgParObsPFPrPSeq:
 
         # RHCR part
         self.h, self.w = set_h_and_w(self)
+
+        # limits
+        self.time_to_think_limit = None
 
     def _update_neighbours(self):
         _ = [agent.clean_nei() for agent in self.agents]
@@ -336,7 +357,7 @@ class AlgParObsPFPrPSeq:
         else:
             self._build_plans_persist()
 
-    def first_init(self, env: EnvLifelongMAPF):
+    def first_init(self, env: EnvLifelongMAPF, **kwargs):
         self.env = env
         self.n_agents = env.n_agents
         self.map_dim = env.map_dim
@@ -348,6 +369,11 @@ class AlgParObsPFPrPSeq:
         self.agents_dict = {}
         self.curr_iteration = None
         self.agents_names_with_new_goals = []
+
+        # limits
+        self.time_to_think_limit = 1e6
+        if 'time_to_think_limit' in kwargs:
+            self.time_to_think_limit = kwargs['time_to_think_limit']
 
     def reset(self):
         self.agents: List[ParObsPFPrPAgent] = []
@@ -361,6 +387,7 @@ class AlgParObsPFPrPSeq:
             self.agents_dict[new_agent.name] = new_agent
             self.curr_iteration = 0
 
+    # @check_time_limit()
     def get_actions(self, observations, **kwargs):
         """
         observations[agent.name] = {

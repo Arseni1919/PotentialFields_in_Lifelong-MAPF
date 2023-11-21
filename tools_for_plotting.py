@@ -1,6 +1,7 @@
 from globals import *
 
 
+
 def plot_magnet_field(path, data):
     plt.rcParams["figure.figsize"] = [8.00, 8.00]
     plt.rcParams["figure.autolayout"] = True
@@ -795,6 +796,26 @@ def plot_avr_nearby_agents(ax, info):
     set_plot_title(ax, f'Avr. N of Nearby Agents')
     set_legend(ax)
 
+
+def plot_throughput(ax, info):
+    ax.cla()
+    algorithms = info['algorithms']
+    n_agents_list = info['n_agents_list']
+    logs_dict = info['logs_dict']
+
+    for i_alg in algorithms:
+        y_list = []
+        for n_a in n_agents_list:
+            y_list.append(np.mean(logs_dict[i_alg.alg_name][f'{n_a}']['n_closed_goals']))
+        ax.plot(n_agents_list, y_list, '-o', label=i_alg.alg_name)
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents')
+    ax.set_ylabel('Average Throughput')
+    ax.set_title(f'Throughput')
+    set_legend(ax)
+    # ax.set_xlabel('N agents', labelpad=-1)
+    # ax.set_ylabel('Average Throughput', labelpad=-1)
 # --------------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------------- #

@@ -21,6 +21,7 @@ def show_results():
     pass
 
 
+@use_profiler(save_dir='stats/run_big_experiments.pstat')
 def run_big_experiments(**kwargs):
     # ------------------------- General
     random_seed = kwargs['random_seed']
@@ -69,7 +70,7 @@ def run_big_experiments(**kwargs):
             env.reset(same_start=False)
             # algorithms
             for alg in algorithms:
-                alg.first_init(env)
+                alg.first_init(env, time_to_think_limit=time_to_think_limit)
                 observations = env.reset(same_start=True)
                 alg.reset()
 
@@ -86,8 +87,8 @@ def run_big_experiments(**kwargs):
                 # iterations
                 for i in range(iterations):
 
-                    # !!!!!!!!!!!!!!!!!
-                    actions, alg_info = alg.get_actions(observations, iteration=i)  # here is the agents' decision
+                    # !!!!!!!!!!!!!!!!! here is the agents' decision
+                    actions, alg_info = alg.get_actions(observations, iteration=i)
 
                     # step
                     observations, rewards, termination, step_info = env.step(actions)
@@ -116,13 +117,7 @@ def run_big_experiments(**kwargs):
 
                 # for rendering
                 if middle_plot:
-                    ax.cla()
-                    for i_alg in algorithms:
-                        y_list = []
-                        for n_a in n_agents_list:
-                            y_list.append(np.mean(logs_dict[i_alg.alg_name][f'{n_a}']['n_closed_goals']))
-                        ax.plot(n_agents_list, y_list, '-o', label=i_alg.alg_name)
-                    ax.legend()
+                    plot_throughput(ax, info={'algorithms': algorithms, 'n_agents_list': n_agents_list, 'logs_dict': logs_dict})
                     plt.pause(0.001)
 
     if to_save_results:
@@ -131,16 +126,13 @@ def run_big_experiments(**kwargs):
     if final_plot:
         pass
 
-    plt.show()
 
-
-@use_profiler(save_dir='../stats/run_big_experiments.pstat')
 def main():
 
     run_big_experiments(
         # ------------------------- General
-        random_seed=True,
-        # random_seed=False,
+        # random_seed=True,
+        random_seed=False,
         seed=958,
         # save & show
         middle_plot=True,
@@ -150,13 +142,19 @@ def main():
         to_save_results=False,
 
         # ------------------------- For Simulation
-        n_agents_list=[110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310],
+        # n_agents_list=[210],
+        # n_agents_list=[210, 230, 250, 270, 290, 310],
+        n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450, 470, 490],
+        # n_agents_list=[10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310],
         # n_agents_list=[10, 30, 50, 70, 90, 110],
         # n_agents_list=[80, 100, 120, 140, 160, 180, 200, 220, 240, 260],
         runs_per_n_agents=2,
+        # runs_per_n_agents=1,
 
         # ------------------------- For Env
-        iterations=200,
+        # iterations=200,
+        iterations=100,
+        # iterations=50,
 
         # ------------------------- For algs
         algorithms=[
@@ -166,24 +164,34 @@ def main():
             # AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': 5, 'w': 5, 'pf_weight': 5, 'pf_size': 3}),
 
             # AlgLNS2Seq(alg_name='LNS2', params={'big_N': 5}),
-            AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': 5, 'h': 5, 'w': 5}),
+            # AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': 5, 'h': 5, 'w': 5}),
             # AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(1/10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(1/2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.5, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(1)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 2, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='(1/10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.1, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='(1/2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.5, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='(1)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='(2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 2, 'pf_size': 3}),
             # AlgLNS2Seq(alg_name='(10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 10, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='(long_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'long_paths'}),
+            AlgLNS2Seq(alg_name='(short_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'short_paths'}),
+            AlgLNS2Seq(alg_name='(my_h_short)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_short'}),
+            AlgLNS2Seq(alg_name='(my_h_long)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_long'}),
+            AlgLNS2Seq(alg_name='(uniform)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'uniform'}),
         ],
         # limits
+        # time_to_think_limit=1,  # seconds
+        # time_to_think_limit=5,  # seconds
         time_to_think_limit=10,  # seconds
+        # time_to_think_limit=30,  # seconds
+        # time_to_think_limit=60,  # seconds
 
         # ------------------------- Map
-        # img_dir = 'empty-32-32.map'  # 32-32
+        # img_dir='empty-32-32.map'  # 32-32
         img_dir='random-32-32-10.map'  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir = 'random-32-32-20.map'  # 32-32
         # img_dir = 'room-32-32-4.map'  # 32-32
         # img_dir = 'maze-32-32-2.map'  # 32-32
     )
+    plt.show()
 
 
 if __name__ == '__main__':

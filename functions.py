@@ -1,4 +1,5 @@
 from globals import *
+from concurrent.futures import ThreadPoolExecutor
 
 
 def set_h_and_w(obj):
@@ -31,6 +32,21 @@ def use_profiler(save_dir):
     return decorator
 
 
+def check_time_limit():
+    def decorator(func):
+        def inner1(*args, **kwargs):
+            start_time = time.time()
+            # getting the returned value
+            returned_value = func(*args, **kwargs)
+            end_time = time.time() - start_time
+            if end_time > args[0].time_to_think_limit + 1:
+                raise RuntimeError(f'[{args[0].alg_name}] crossed the time limit of {args[0].time_to_think_limit} s.')
+            # returning the value to the original frame
+            return returned_value
+        return inner1
+    return decorator
+
+
 def set_seed(random_seed_bool, seed=1):
     if random_seed_bool:
         seed = random.randint(0, 1000)
@@ -46,22 +62,59 @@ def check_if_nei_pos(agents):
 
 
 def two_plans_have_no_confs(plan1, plan2):
+    # min_len = min(len(plan1), len(plan2))
+    # with ThreadPoolExecutor() as executor:
+    #     names_1 = np.array(list(executor.map(lambda x: x.xy_name, plan1[:min_len])))
+    #     names_2 = np.array(list(executor.map(lambda x: x.xy_name, plan2[:min_len])))
+    # names_1 = np.array([v.xy_name for v in plan1[:min_len]])
+    # names_2 = np.array([v.xy_name for v in plan2[:min_len]])
+    # names_1 = np.vectorize(lambda obj: obj.xy_name)(plan1[:min_len])
+    # names_1 = np.vectorize(lambda obj: obj.xy_name)(plan2[:min_len])
+    # vc
+    # if np.any(names_1 == names_2):
+    #     return False
+    # # ec
+    # names_2 = np.flip(names_2)
+    # consecutive_equal_values = np.char.equal(names_1[:-1], names_2[:-1]) & np.char.equal(names_1[1:], names_2[1:])
+    # if np.any(consecutive_equal_values):
+    #     return False
+    # return True
+
     min_len = min(len(plan1), len(plan2))
-    prev1 = plan1[0]
-    prev2 = plan2[0]
-    for i in range(min_len):
-        vertex1 = plan1[i]
-        vertex2 = plan2[i]
+    prev1 = None
+    prev2 = None
+    for i, (vertex1, vertex2) in enumerate(zip(plan1[:min_len], plan2[:min_len])):
+        if vertex1.xy_name == vertex2.xy_name:
+            return False
         if i > 0:
-            edge1 = (prev1.xy_name, vertex1.xy_name)
-            edge2 = (vertex2.xy_name, prev2.xy_name)
-            if edge1 == edge2:
+            # edge1 = (prev1.xy_name, vertex1.xy_name)
+            # edge2 = (vertex2.xy_name, prev2.xy_name)
+            if (prev1.xy_name, vertex1.xy_name) == (vertex2.xy_name, prev2.xy_name):
                 return False
         prev1 = vertex1
         prev2 = vertex2
-        if vertex1.xy_name == vertex2.xy_name:
-            return False
     return True
+
+# def two_plans_have_no_confs(plan1, plan2):
+#     min_len = min(len(plan1), len(plan2))
+#     names_1 = [v.xy_name for v in plan1[:min_len]]
+#     names_2 = [v.xy_name for v in plan2[:min_len]]
+#
+#     if any(map(operator.eq, names_1, names_2)):
+#         return False
+#
+#     prev1 = names_1[0]
+#     prev2 = names_2[0]
+#     for name_1, name_2 in zip(names_1[1:], names_2[1:]):
+#         edge1 = (prev1, name_1)
+#         edge2 = (name_2, prev2)
+#         if edge1 == edge2:
+#             return False
+#         prev1 = name_1
+#         prev2 = name_2
+#         # if vertex1.xy_name == vertex2.xy_name:
+#         #     return False
+#     return True
 
 
 def check_actions_if_vc(agents, actions):

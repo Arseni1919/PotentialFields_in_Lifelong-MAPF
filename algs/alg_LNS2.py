@@ -94,7 +94,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
             agent.build_plan(h_agents)
             h_agents.append(agent)
 
-    def replace_old_plans(self):
+    def _replace_old_plans(self):
         pass
 
     def _build_plans(self):
@@ -119,6 +119,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
               is no larger than that of the old plan
         return: valid plans
         """
+        start_time = time.time()
         self._update_order()
 
         h_agents = []
@@ -135,8 +136,14 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
                 self._fill_the_neighbourhood(V_v)
 
             self._solve_with_PrP()
-            self.replace_old_plans()
+            self._replace_old_plans()
             print(f'\n{num_of_confs=}')
+
+            # limit check
+            end_time = time.time() - start_time
+            if end_time > self.time_to_think_limit:
+                self._implement_istay()
+                break
 
 
 @use_profiler(save_dir='../stats/alg_lns2_seq.pstat')
@@ -172,11 +179,11 @@ def main():
         'ParObs-PF-LNS2': {
             'big_N': big_N,
             # For PF
-            # 'pf_weight': 0.5,
+            'pf_weight': 0.5,
             # 'pf_weight': 1,
             # 'pf_weight': 3,
             # 'pf_weight': 5,
-            'pf_weight': 10,
+            # 'pf_weight': 10,
             # 'pf_size': 'h',
             'pf_size': 3,
             # 'pf_size': 5,
@@ -199,21 +206,21 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=0,
-        # middle_plot=True,
-        middle_plot=False,
+        PLOT_FROM=50,
+        middle_plot=True,
+        # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
         iterations=200,  # !!!
         # iterations=100,
-        n_agents=150,
+        n_agents=250,
         n_problems=1,
 
         # Map
-        # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='empty-32-32.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
