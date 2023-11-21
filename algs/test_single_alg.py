@@ -23,6 +23,7 @@ def test_single_alg(alg, **kwargs):
     n_agents = kwargs['n_agents']
     n_problems = kwargs['n_problems']
     classical_mapf = kwargs['classical_mapf']
+    time_to_think_limit = kwargs['time_to_think_limit']
     # Map
     img_dir = kwargs['img_dir']
 
@@ -44,7 +45,7 @@ def test_single_alg(alg, **kwargs):
     )
 
     # !!!!!!!!!!!!!!!!!
-    alg.first_init(env)
+    alg.first_init(env, time_to_think_limit=time_to_think_limit)
 
     start_time = time.time()
 

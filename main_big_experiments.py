@@ -15,7 +15,7 @@ def save_results(**kwargs):
     runs_per_n_agents = kwargs['runs_per_n_agents']
     img_dir = kwargs['img_dir']
     logs_dict = kwargs['logs_dict']
-    file_dir = f'logs_for_graphs/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_ALGS-{len(algorithms)}_RUNS-{runs_per_n_agents}_MAP-{img_dir[:-4]}.json'
+    file_dir = f'logs_for_plots/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_ALGS-{len(algorithms)}_RUNS-{runs_per_n_agents}_MAP-{img_dir[:-4]}.json'
     # Serializing json
     json_object = json.dumps(logs_dict, indent=4)
     with open(file_dir, "w") as outfile:

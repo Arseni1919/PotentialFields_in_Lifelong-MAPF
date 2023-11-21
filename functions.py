@@ -62,23 +62,6 @@ def check_if_nei_pos(agents):
 
 
 def two_plans_have_no_confs(plan1, plan2):
-    # min_len = min(len(plan1), len(plan2))
-    # with ThreadPoolExecutor() as executor:
-    #     names_1 = np.array(list(executor.map(lambda x: x.xy_name, plan1[:min_len])))
-    #     names_2 = np.array(list(executor.map(lambda x: x.xy_name, plan2[:min_len])))
-    # names_1 = np.array([v.xy_name for v in plan1[:min_len]])
-    # names_2 = np.array([v.xy_name for v in plan2[:min_len]])
-    # names_1 = np.vectorize(lambda obj: obj.xy_name)(plan1[:min_len])
-    # names_1 = np.vectorize(lambda obj: obj.xy_name)(plan2[:min_len])
-    # vc
-    # if np.any(names_1 == names_2):
-    #     return False
-    # # ec
-    # names_2 = np.flip(names_2)
-    # consecutive_equal_values = np.char.equal(names_1[:-1], names_2[:-1]) & np.char.equal(names_1[1:], names_2[1:])
-    # if np.any(consecutive_equal_values):
-    #     return False
-    # return True
 
     min_len = min(len(plan1), len(plan2))
     prev1 = None

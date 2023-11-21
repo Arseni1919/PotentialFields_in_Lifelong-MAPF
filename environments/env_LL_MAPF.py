@@ -76,8 +76,9 @@ class EnvLifelongMAPF:
         first_run = same_start and self.start_nodes is None
         if first_run or not same_start:
             self.start_nodes = random.sample(self.nodes, self.n_agents)
-            available_nodes = [node for node in self.nodes if node not in self.start_nodes]
-            self.first_goal_nodes = random.sample(available_nodes, self.n_agents)
+            # available_nodes = [node for node in self.nodes if node not in self.start_nodes]
+            # self.first_goal_nodes = random.sample(available_nodes, self.n_agents)
+            self.first_goal_nodes = random.sample(self.nodes, self.n_agents)
         self._create_agents()
         observations = self._get_observations([a.name for a in self.agents])
         return observations

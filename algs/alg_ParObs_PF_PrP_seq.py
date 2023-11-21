@@ -169,7 +169,7 @@ class ParObsPFPrPAgent:
 
     # POTENTIAL FIELDS ************************* pf_shape of circle ************************
     def _create_pf_field(self):
-        if self.curr_node.xy_name == self.next_goal_node.xy_name: return
+        # if self.curr_node.xy_name == self.next_goal_node.xy_name: return
         if self.pf_weight == 0: return
         gradient_list = self._get_gradient_list()
         if len(gradient_list) == 0: return
@@ -308,13 +308,26 @@ class AlgParObsPFPrPSeq:
     def _implement_istay(self):
         # IStay
         there_is_conf = True
+        # pairs_list = list(combinations(self.agents, 2))
+        standing_agents = set()
         while there_is_conf:
             there_is_conf = False
             for agent1, agent2 in combinations(self.agents, 2):
+                if agent1.name in standing_agents and agent2.name in standing_agents:
+                    continue
+                # if agent1.name in standing_agents:
+                #     for i, vertex2 in agent2.plan:
+                #         if vertex2.xy_name == agent1.plan[0].xy_name:
+                #             there_is_conf = True
+                #             agent2.set_istay()
+                #             standing_agents.add(agent2.name)
+                #             break
                 if not two_plans_have_no_confs(agent1.plan, agent2.plan):
                     there_is_conf = True
                     agent1.set_istay()
                     agent2.set_istay()
+                    standing_agents.add(agent1.name)
+                    standing_agents.add(agent2.name)
                     break
 
     def _build_plans_restart(self):
@@ -492,6 +505,7 @@ def main():
         n_problems=1,
         # classical_mapf=True,
         classical_mapf=False,
+        time_to_think_limit=10,  # seconds
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32

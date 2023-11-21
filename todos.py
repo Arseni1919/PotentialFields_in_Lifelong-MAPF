@@ -26,14 +26,15 @@ DONE:
 - execute big experiments
     - set the limit for calculations
     - examine different PF variations
-- save the data
 
 ##########################################
 ##########################################
 TODO:
 
+- save the data
 - maybe implement single-shot MAPF in the simulator
 - maybe implement SDS
+
 - maybe implement learning for the PF parameters with RL
 - write a paper
 - submit to a conference
