@@ -23,17 +23,18 @@ DONE:
 - correct the PrP and PF-PrP
 - implement LNS2 with Collision-Based Neighborhoods (CBN)
 - improve PF (agent creates all PF)
+- execute big experiments
+    - set the limit for calculations
+    - examine different PF variations
+- save the data
 
 ##########################################
 ##########################################
 TODO:
 
-- execute big experiments
-    - set the limit for calculations
-    - examine different PF variations
-- maybe implement learning for the PF parameters with RL
 - maybe implement single-shot MAPF in the simulator
 - maybe implement SDS
+- maybe implement learning for the PF parameters with RL
 - write a paper
 - submit to a conference
 

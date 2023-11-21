@@ -81,9 +81,9 @@ class ParObsPFPrPAgent:
 
         # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'short_paths'
         # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'long_paths'
-        pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'uniform'
         # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'my_h_long'
         # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'my_h_short'
+        pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'uniform'
 
         # Prefer Longer Paths
         if pf_weight_pref == 'long_paths':

@@ -14,11 +14,24 @@ def save_results(**kwargs):
     algorithms = kwargs['algorithms']
     runs_per_n_agents = kwargs['runs_per_n_agents']
     img_dir = kwargs['img_dir']
+    logs_dict = kwargs['logs_dict']
     file_dir = f'logs_for_graphs/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_ALGS-{len(algorithms)}_RUNS-{runs_per_n_agents}_MAP-{img_dir[:-4]}.json'
+    # Serializing json
+    json_object = json.dumps(logs_dict, indent=4)
+    with open(file_dir, "w") as outfile:
+        outfile.write(json_object)
+    # Results saved.
+    return file_dir
 
 
-def show_results():
-    pass
+def show_results(**kwargs):
+    file_dir = kwargs['file_dir']
+    with open(f'{file_dir}', 'r') as openfile:
+        # Reading from json file
+        logs_dict = json.load(openfile)
+        fig,ax = plt.subplots()
+        plot_throughput(ax, info={'logs_dict': logs_dict})
+        plt.show()
 
 
 @use_profiler(save_dir='stats/run_big_experiments.pstat')
@@ -28,7 +41,6 @@ def run_big_experiments(**kwargs):
     seed = kwargs['seed']
     # save & show
     middle_plot = kwargs['middle_plot']
-    final_plot = kwargs['final_plot']
     to_save_results = kwargs['to_save_results']
 
     # ------------------------- For Simulation
@@ -54,6 +66,10 @@ def run_big_experiments(**kwargs):
             } for n_agents in n_agents_list
         } for alg in algorithms
     }
+    logs_dict['alg_names'] = [alg.alg_name for alg in algorithms]
+    logs_dict['n_agents_list'] = n_agents_list
+    logs_dict['img_dir'] = img_dir
+
     if middle_plot:
         fig, ax = plt.subplots()
 
@@ -117,14 +133,14 @@ def run_big_experiments(**kwargs):
 
                 # for rendering
                 if middle_plot:
-                    plot_throughput(ax, info={'algorithms': algorithms, 'n_agents_list': n_agents_list, 'logs_dict': logs_dict})
+                    plot_throughput(ax, info={'logs_dict': logs_dict})
                     plt.pause(0.001)
 
     if to_save_results:
-        pass
-
-    if final_plot:
-        pass
+        file_dir = save_results(
+            algorithms=algorithms, runs_per_n_agents=runs_per_n_agents, img_dir=img_dir, logs_dict=logs_dict
+        )
+        # show_results(file_dir=file_dir)
 
 
 def main():
@@ -137,7 +153,6 @@ def main():
         # save & show
         middle_plot=True,
         # middle_plot=False,
-        final_plot=True,
         # to_save_results = True,
         to_save_results=False,
 
@@ -164,18 +179,18 @@ def main():
             # AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': 5, 'w': 5, 'pf_weight': 5, 'pf_size': 3}),
 
             # AlgLNS2Seq(alg_name='LNS2', params={'big_N': 5}),
-            # AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': 5, 'h': 5, 'w': 5}),
             # AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
-            # AlgLNS2Seq(alg_name='(1/10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.1, 'pf_size': 3}),
-            # AlgLNS2Seq(alg_name='(1/2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.5, 'pf_size': 3}),
-            # AlgLNS2Seq(alg_name='(1)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3}),
-            # AlgLNS2Seq(alg_name='(2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 2, 'pf_size': 3}),
-            # AlgLNS2Seq(alg_name='(10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 10, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(long_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'long_paths'}),
-            AlgLNS2Seq(alg_name='(short_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'short_paths'}),
-            AlgLNS2Seq(alg_name='(my_h_short)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_short'}),
-            AlgLNS2Seq(alg_name='(my_h_long)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_long'}),
-            AlgLNS2Seq(alg_name='(uniform)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'uniform'}),
+            # AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': 5, 'h': 5, 'w': 5}),
+            AlgLNS2Seq(alg_name='(1/10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.1, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='(1/2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.5, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='(1)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='(2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 2, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='(10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 10, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='(long_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'long_paths'}),
+            # AlgLNS2Seq(alg_name='(short_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'short_paths'}),
+            # AlgLNS2Seq(alg_name='(my_h_short)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_short'}),
+            # AlgLNS2Seq(alg_name='(my_h_long)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_long'}),
+            # AlgLNS2Seq(alg_name='(uniform)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'uniform'}),
         ],
         # limits
         # time_to_think_limit=1,  # seconds

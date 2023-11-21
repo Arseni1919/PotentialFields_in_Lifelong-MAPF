@@ -799,20 +799,21 @@ def plot_avr_nearby_agents(ax, info):
 
 def plot_throughput(ax, info):
     ax.cla()
-    algorithms = info['algorithms']
-    n_agents_list = info['n_agents_list']
     logs_dict = info['logs_dict']
+    alg_names = logs_dict['alg_names']
+    n_agents_list = logs_dict['n_agents_list']
+    img_dir = logs_dict['img_dir']
 
-    for i_alg in algorithms:
+    for i_alg in alg_names:
         y_list = []
         for n_a in n_agents_list:
-            y_list.append(np.mean(logs_dict[i_alg.alg_name][f'{n_a}']['n_closed_goals']))
-        ax.plot(n_agents_list, y_list, '-o', label=i_alg.alg_name)
+            y_list.append(np.mean(logs_dict[i_alg][f'{n_a}']['n_closed_goals']))
+        ax.plot(n_agents_list, y_list, '-o', label=i_alg)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
     ax.set_xticks(n_agents_list)
     ax.set_xlabel('N agents')
     ax.set_ylabel('Average Throughput')
-    ax.set_title(f'Throughput')
+    ax.set_title(f'{img_dir[:-4]} Map')
     set_legend(ax)
     # ax.set_xlabel('N agents', labelpad=-1)
     # ax.set_ylabel('Average Throughput', labelpad=-1)

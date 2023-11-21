@@ -48,6 +48,7 @@ class EnvLifelongMAPF:
         self.n_agents = n_agents
         self.agents: List[SimAgent] = None
         self.img_dir = img_dir
+        self.classical_mapf = kwargs['classical_mapf'] if 'classical_mapf' in kwargs else False
         path_to_maps = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
         self.map_dim = get_dims_from_pic(img_dir=img_dir, path=path_to_maps)
         self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
@@ -61,7 +62,6 @@ class EnvLifelongMAPF:
         self.first_goal_nodes = None
 
         # for plotting
-        self.final_plot = kwargs['final_plot']
         self.middle_plot = kwargs['middle_plot']
         if self.middle_plot:
             self.plot_per = kwargs['plot_per']
@@ -71,12 +71,6 @@ class EnvLifelongMAPF:
             # self.fig, self.ax = plt.subplots(figsize=(14, 7))
             # self.fig, self.ax = plt.subplots(figsize=(7, 7))
             self.fig, self.ax = plt.subplots(1, 2, figsize=(14, 7))
-
-    def _create_agents(self):
-        self.agents = []
-        for i, (start_node, goal_node) in enumerate(zip(self.start_nodes, self.first_goal_nodes)):
-            new_agent = SimAgent(num=i, start_node=start_node, next_goal_node=goal_node)
-            self.agents.append(new_agent)
 
     def reset(self, same_start):
         first_run = same_start and self.start_nodes is None
@@ -88,22 +82,6 @@ class EnvLifelongMAPF:
         observations = self._get_observations([a.name for a in self.agents])
         return observations
 
-    def _get_observations(self, agents_names_with_new_goals):
-        observations = {
-            'agents_names': [agent.name for agent in self.agents],
-            'agents_names_with_new_goals': agents_names_with_new_goals
-        }
-        for agent in self.agents:
-            observations[agent.name] = {
-                'num': agent.num,
-                'curr_node': agent.curr_node,
-                'prev_node': agent.prev_node,
-                'next_goal_node': agent.next_goal_node,
-                'closed_goal_nodes': agent.closed_goal_nodes,
-                # 'nei_list': [nei.name for nei in agent.nei_list]
-            }
-        return observations
-
     def sample_actions(self, **kwargs):
         actions = {}
         for agent in self.agents:
@@ -112,30 +90,6 @@ class EnvLifelongMAPF:
             next_node = agent.plan.pop(0)
             actions[agent.name] = next_node.xy_name
         return actions
-
-    def _execute_actions(self, actions):
-        for agent in self.agents:
-            next_node_name = actions[agent.name]
-            agent.prev_node = agent.curr_node
-            agent.curr_node = self.nodes_dict[next_node_name]
-        # checks
-        check_if_nei_pos(self.agents)
-        check_if_vc(self.agents)
-        check_if_ec(self.agents)
-
-    def _execute_event_new_goal(self):
-        goals_names_list = [agent.next_goal_node.xy_name for agent in self.agents]
-        available_nodes = [node for node in self.nodes if node.xy_name not in goals_names_list]
-        random.shuffle(available_nodes)
-        agents_names_with_new_goals = []
-        for agent in self.agents:
-            if agent.curr_node.xy_name == (closed_goal := agent.next_goal_node).xy_name:
-                agent.closed_goal_nodes.append(closed_goal)
-                new_goal_node = available_nodes.pop()
-                agent.next_goal_node = new_goal_node
-                agent.plan = []
-                agents_names_with_new_goals.append(agent.name)
-        return agents_names_with_new_goals
 
     def step(self, actions):
         """
@@ -159,16 +113,57 @@ class EnvLifelongMAPF:
             plot_magnet_agent_view(self.ax[1], info)
             plt.pause(self.plot_rate)
         n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in self.agents])
-        print(f"\n\n[{info['alg_name']}] PROBLEM: {info['i_problem'] + 1}, ITERATION: {info['i'] + 1}\n"
+        print(f"\n\n[{len(self.agents)}][{info['alg_name']}] PROBLEM: {info['i_problem'] + 1}, ITERATION: {info['i'] + 1}\n"
               f"Total closed goals --------------------------------> {n_closed_goals}\n"
               f"Total time --------------------------------> {info['runtime']: .2f}s\n")
 
-    def render_final_plot(self):
-        if self.final_plot:
-            pass
+    def _create_agents(self):
+        self.agents = []
+        for i, (start_node, goal_node) in enumerate(zip(self.start_nodes, self.first_goal_nodes)):
+            new_agent = SimAgent(num=i, start_node=start_node, next_goal_node=goal_node)
+            self.agents.append(new_agent)
 
-    def get_fig(self):
-        pass
+    def _get_observations(self, agents_names_with_new_goals):
+        observations = {
+            'agents_names': [agent.name for agent in self.agents],
+            'agents_names_with_new_goals': agents_names_with_new_goals
+        }
+        for agent in self.agents:
+            observations[agent.name] = {
+                'num': agent.num,
+                'curr_node': agent.curr_node,
+                'prev_node': agent.prev_node,
+                'next_goal_node': agent.next_goal_node,
+                'closed_goal_nodes': agent.closed_goal_nodes,
+                # 'nei_list': [nei.name for nei in agent.nei_list]
+            }
+        return observations
+
+    def _execute_actions(self, actions):
+        for agent in self.agents:
+            next_node_name = actions[agent.name]
+            agent.prev_node = agent.curr_node
+            agent.curr_node = self.nodes_dict[next_node_name]
+        # checks
+        check_if_nei_pos(self.agents)
+        check_if_vc(self.agents)
+        check_if_ec(self.agents)
+
+    def _execute_event_new_goal(self):
+        if self.classical_mapf:
+            return []
+        goals_names_list = [agent.next_goal_node.xy_name for agent in self.agents]
+        available_nodes = [node for node in self.nodes if node.xy_name not in goals_names_list]
+        random.shuffle(available_nodes)
+        agents_names_with_new_goals = []
+        for agent in self.agents:
+            if agent.curr_node.xy_name == (closed_goal := agent.next_goal_node).xy_name:
+                agent.closed_goal_nodes.append(closed_goal)
+                new_goal_node = available_nodes.pop()
+                agent.next_goal_node = new_goal_node
+                agent.plan = []
+                agents_names_with_new_goals.append(agent.name)
+        return agents_names_with_new_goals
 
     def close(self):
         pass
