@@ -214,6 +214,8 @@ class ParObsPFPrPAgent:
             self.set_istay()
 
     def _fulfill_the_plan(self):
+        if len(self.plan) == 0:
+            self.plan = [self.curr_node]
         if self.h and self.h < 1000:
             while len(self.plan) < self.h:
                 self.plan.append(self.plan[-1])
@@ -468,8 +470,8 @@ def main():
             # For PF
             # 'pf_weight': 0.5,
             # 'pf_weight': 1,
-            # 'pf_weight': 3,
-            'pf_weight': 5,
+            'pf_weight': 3,
+            # 'pf_weight': 5,
             # 'pf_weight': 10,
             # 'pf_size': 'h',
             # 'pf_size': 5,
@@ -501,7 +503,7 @@ def main():
         # FOR ENV
         iterations=200,
         # iterations=100,
-        n_agents=50,
+        n_agents=350,
         n_problems=1,
         # classical_mapf=True,
         classical_mapf=False,
