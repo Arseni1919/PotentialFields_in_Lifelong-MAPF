@@ -429,10 +429,10 @@ class AlgParObsPFPrPSeq:
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
 def main():
     # Alg params
-    alg_name = 'PrP'
+    # alg_name = 'PrP'
     # alg_name = 'PF-PrP'
     # alg_name = 'ParObs-PrP'
-    # alg_name = 'ParObs-PF-PrP'
+    alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
         'PrP': {},
@@ -456,8 +456,8 @@ def main():
             # 'pf_weight': 0.5,
             # 'pf_weight': 1,
             # 'pf_weight': 3,
-            # 'pf_weight': 5,
-            'pf_weight': 10,
+            'pf_weight': 5,
+            # 'pf_weight': 10,
             # 'pf_size': 'h',
             # 'pf_size': 5,
             'pf_size': 3,
@@ -490,6 +490,8 @@ def main():
         # iterations=100,
         n_agents=50,
         n_problems=1,
+        # classical_mapf=True,
+        classical_mapf=False,
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32

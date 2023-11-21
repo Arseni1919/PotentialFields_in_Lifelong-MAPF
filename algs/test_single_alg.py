@@ -22,6 +22,7 @@ def test_single_alg(alg, **kwargs):
     iterations = kwargs['iterations']
     n_agents = kwargs['n_agents']
     n_problems = kwargs['n_problems']
+    classical_mapf = kwargs['classical_mapf']
     # Map
     img_dir = kwargs['img_dir']
 
@@ -37,6 +38,7 @@ def test_single_alg(alg, **kwargs):
     set_seed(random_seed, seed)
     env = EnvLifelongMAPF(
         n_agents=n_agents, img_dir=img_dir,
+        classical_mapf=classical_mapf,
         plot_per=PLOT_PER, plot_rate=PLOT_RATE, plot_from=PLOT_FROM,
         middle_plot=middle_plot, final_plot=final_plot,
     )
