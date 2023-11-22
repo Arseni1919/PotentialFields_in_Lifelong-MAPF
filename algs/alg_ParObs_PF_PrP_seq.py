@@ -315,15 +315,24 @@ class AlgParObsPFPrPSeq:
         while there_is_conf:
             there_is_conf = False
             for agent1, agent2 in combinations(self.agents, 2):
-                if agent1.name in standing_agents and agent2.name in standing_agents:
-                    continue
-                # if agent1.name in standing_agents:
-                #     for i, vertex2 in agent2.plan:
-                #         if vertex2.xy_name == agent1.plan[0].xy_name:
-                #             there_is_conf = True
-                #             agent2.set_istay()
-                #             standing_agents.add(agent2.name)
-                #             break
+                if agent1.name in standing_agents:
+                    if agent2.name in standing_agents:
+                        continue
+                    if not plan_has_no_conf_with_vertex(agent2.plan, agent1.curr_node):
+                        there_is_conf = True
+                        agent2.set_istay()
+                        standing_agents.add(agent2.name)
+                        break
+                    else:
+                        continue
+                if agent2.name in standing_agents:
+                    if not plan_has_no_conf_with_vertex(agent1.plan, agent2.curr_node):
+                        there_is_conf = True
+                        agent1.set_istay()
+                        standing_agents.add(agent1.name)
+                        break
+                    else:
+                        continue
                 if not two_plans_have_no_confs(agent1.plan, agent2.plan):
                     there_is_conf = True
                     agent1.set_istay()
@@ -495,14 +504,15 @@ def main():
         PLOT_PER=1,
         PLOT_RATE=0.001,
         PLOT_FROM=50,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        iterations=200,
+        # iterations=200,
         # iterations=100,
+        iterations=50,
         n_agents=350,
         n_problems=1,
         # classical_mapf=True,

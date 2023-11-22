@@ -180,12 +180,12 @@ def main():
 
             # AlgLNS2Seq(alg_name='LNS2', params={'big_N': 5}),
             # AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
-            # AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': 5, 'h': 5, 'w': 5}),
-            AlgLNS2Seq(alg_name='(1/10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(1/2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.5, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(1)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(2)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 2, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='(10)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 10, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': 5, 'h': 5, 'w': 5}),
+            AlgLNS2Seq(alg_name='ParObs-PF(0.1)-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.1, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='ParObs-PF(0.5)-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 0.5, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='ParObs-PF(1)-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='ParObs-PF(2)-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 2, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='ParObs-PF(5)-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 5, 'pf_size': 3}),
             # AlgLNS2Seq(alg_name='(long_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'long_paths'}),
             # AlgLNS2Seq(alg_name='(short_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'short_paths'}),
             # AlgLNS2Seq(alg_name='(my_h_short)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_short'}),
@@ -194,14 +194,14 @@ def main():
         ],
         # limits
         # time_to_think_limit=1,  # seconds
-        # time_to_think_limit=5,  # seconds
-        time_to_think_limit=10,  # seconds
+        time_to_think_limit=5,  # seconds
+        # time_to_think_limit=10,  # seconds
         # time_to_think_limit=30,  # seconds
         # time_to_think_limit=60,  # seconds
 
         # ------------------------- Map
-        # img_dir='empty-32-32.map'  # 32-32
-        img_dir='random-32-32-10.map'  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='empty-32-32.map'  # 32-32
+        # img_dir='random-32-32-10.map'  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir = 'random-32-32-20.map'  # 32-32
         # img_dir = 'room-32-32-4.map'  # 32-32
         # img_dir = 'maze-32-32-2.map'  # 32-32

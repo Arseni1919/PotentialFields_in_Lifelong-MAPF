@@ -61,6 +61,13 @@ def check_if_nei_pos(agents):
             raise RuntimeError('wow wow wow! Not nei pos!')
 
 
+def plan_has_no_conf_with_vertex(plan, vertex):
+    for plan_v in plan:
+        if plan_v.xy_name == vertex.xy_name:
+            return False
+    return True
+
+
 def two_plans_have_no_confs(plan1, plan2):
 
     min_len = min(len(plan1), len(plan2))
