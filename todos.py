@@ -35,6 +35,7 @@ TODO:
 improve _implement_istay()
 - maybe implement single-shot MAPF in the simulator
 - maybe implement SDS
+- BUG: additional step
 
 - maybe implement learning for the PF parameters with RL
 - write a paper

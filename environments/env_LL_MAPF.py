@@ -182,6 +182,7 @@ def main():
     seed = 612
     PLOT_PER = 1
     PLOT_RATE = 0.001
+    PLOT_FROM = 1
     middle_plot = True
     # middle_plot = False
     final_plot = True
@@ -216,7 +217,8 @@ def main():
     set_seed(random_seed, seed)
     env = EnvLifelongMAPF(
         n_agents=n_agents, img_dir=img_dir,
-        plot_per=PLOT_PER, plot_rate=PLOT_RATE, middle_plot=middle_plot, final_plot=final_plot,
+        plot_per=PLOT_PER, plot_rate=PLOT_RATE, plot_from=PLOT_FROM,
+        middle_plot=middle_plot, final_plot=final_plot,
     )
     start_time = time.time()
     info = {

@@ -208,7 +208,7 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=3,
+        PLOT_FROM=10,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
@@ -217,7 +217,7 @@ def main():
         # FOR ENV
         iterations=200,  # !!!
         # iterations=100,
-        n_agents=550,
+        n_agents=500,
         n_problems=1,
         classical_mapf=False,
         time_to_think_limit=30,  # seconds
