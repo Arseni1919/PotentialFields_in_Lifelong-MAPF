@@ -144,7 +144,7 @@ class ParObsPFPrPAgent:
             up_until_t = len(nei_agent.plan)
             weight = self._get_weight(nei_heuristic_value=nei_agent.heuristic_value)
             nei_pfs[:, :, :up_until_t] += weight * nei_agent.pf_field
-        max_number_in_matrix = np.max(nei_pfs)
+        # max_number_in_matrix = np.max(nei_pfs)
         # if max_number_in_matrix > 0:
         #     nei_pfs /= max_number_in_matrix
         # nei_pfs *= self.pf_weight

@@ -178,7 +178,8 @@ def main():
         # n_agents_list=[90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310, 330,],
         # n_agents_list=[10, 30, 50, 70, 90, 110],
         # n_agents_list=[80, 100, 120, 140, 160, 180, 200, 220, 240, 260],
-        runs_per_n_agents=2,
+        runs_per_n_agents=3,
+        # runs_per_n_agents=2,
         # runs_per_n_agents=1,
 
         # ------------------------- For Env
@@ -208,18 +209,26 @@ def main():
             # AlgLNS2Seq(alg_name='(my_h_long)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_long'}),
             # AlgLNS2Seq(alg_name='(uniform)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'uniform'}),
 
-            AlgLNS2Seq(alg_name='ParObs-PF(s-1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 1}),
-            AlgLNS2Seq(alg_name='ParObs-PF(s-2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 2}),
-            AlgLNS2Seq(alg_name='ParObs-PF(s-3)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='ParObs-PF(s-4)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 4}),
-            AlgLNS2Seq(alg_name='ParObs-PF(s-5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 5}),
-            AlgLNS2Seq(alg_name='ParObs-PF(s-6)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 6}),
-            AlgLNS2Seq(alg_name='ParObs-PF(s-7)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 7}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 1}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 2}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-3)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-4)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 4}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 5}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-6)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 6}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(s-7)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 7}),
+
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 1.01}),
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 2}),
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-3)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 3}),
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-4)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 4}),
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 5}),
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-10)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 10}),
+            AlgLNS2Seq(alg_name='ParObs-PF(sh-15)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3, 'pf_shape': 15}),
         ],
         # limits
         # time_to_think_limit=1,  # seconds
-        time_to_think_limit=5,  # seconds
-        # time_to_think_limit=10,  # seconds
+        # time_to_think_limit=5,  # seconds
+        time_to_think_limit=10,  # seconds
         # time_to_think_limit=30,  # seconds
         # time_to_think_limit=60,  # seconds
 
