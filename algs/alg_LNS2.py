@@ -49,6 +49,8 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
         self.conf_agents_names_list = []
         num_of_confs = 0
         for agent1, agent2 in combinations(self.agents, 2):
+            if agent1.name not in agent2.nei_dict:
+                continue
             if not two_plans_have_no_confs(agent1.plan, agent2.plan):
                 num_of_confs += 1
                 self.conf_matrix[agent1.num, agent2.num] = 1

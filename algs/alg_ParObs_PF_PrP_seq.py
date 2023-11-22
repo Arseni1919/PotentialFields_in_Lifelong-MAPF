@@ -315,6 +315,8 @@ class AlgParObsPFPrPSeq:
         while there_is_conf:
             there_is_conf = False
             for agent1, agent2 in combinations(self.agents, 2):
+                if agent1.name not in agent2.nei_dict:
+                    continue
                 if agent1.name in standing_agents:
                     if agent2.name in standing_agents:
                         continue
