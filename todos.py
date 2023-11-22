@@ -26,13 +26,13 @@ DONE:
 - execute big experiments
     - set the limit for calculations
     - examine different PF variations
+- save the data
+improve _implement_istay()
 
 ##########################################
 ##########################################
 TODO:
 
-- save the data
-improve _implement_istay()
 - maybe implement single-shot MAPF in the simulator
 - maybe implement SDS
 - BUG: additional step

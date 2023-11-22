@@ -122,7 +122,8 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
         return: valid plans
         """
         start_time = time.time()
-        self._update_order()
+        # self._update_order()
+        self._reshuffle_agents()
 
         h_agents = []
         # need_to_shuffle = False
@@ -171,7 +172,6 @@ def main():
             'pf_size': 3,
             # 'pf_size': 5,
             # 'pf_size': 2,
-            'pf_shape': 2,
         },
         'ParObs-LNS2': {
             'big_N': big_N,
@@ -183,12 +183,12 @@ def main():
             'big_N': big_N,
             # For PF
             # 'pf_weight': 0.5,
-            # 'pf_weight': 1,
-            'pf_weight': 3,
+            'pf_weight': 1,
+            # 'pf_weight': 3,
             # 'pf_weight': 5,
             # 'pf_weight': 10,
             # 'pf_size': 'h',
-            'pf_size': 3,
+            'pf_size': 4,
             # 'pf_size': 5,
             # 'pf_size': 2,
             # For RHCR
@@ -208,18 +208,19 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=10,
+        PLOT_FROM=45,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        iterations=200,  # !!!
+        iterations=50,  # !!!
         # iterations=100,
-        n_agents=500,
+        n_agents=250,
         n_problems=1,
-        classical_mapf=False,
+        classical_mapf=True,
+        # classical_mapf=False,
         time_to_think_limit=30,  # seconds
 
         # Map

@@ -39,6 +39,10 @@ def get_max_final(perm_constr_dict):
 
 def get_node(successor_xy_name, node_current, nodes, nodes_dict, open_nodes, closed_nodes, v_constr_dict, e_constr_dict,
              perm_constr_dict, max_final_time, **kwargs):
+    xyt_problem = kwargs['xyt_problem']
+    if not xyt_problem:
+        if successor_xy_name == node_current.xy_name:
+            return None, ''
     new_t = node_current.t + 1
 
     if v_constr_dict:

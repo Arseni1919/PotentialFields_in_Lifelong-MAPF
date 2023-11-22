@@ -15,6 +15,8 @@ class SimAgent:
         self.next_goal_node: Node = next_goal_node
         self.closed_goal_nodes: List[Node] = []
         self.plan = []
+        self.reached_the_goal = False
+        self.latest_arrival = None
         # self.nei_list, self.nei_dict = [], {}
 
     # def clean_nei(self):
@@ -23,6 +25,13 @@ class SimAgent:
     # def add_nei(self, nei_agent):
     #     self.nei_list.append(nei_agent)
     #     self.nei_dict[nei_agent.name] = nei_agent
+    def latest_arrival_at_the_goal(self, iteration):
+        if self.curr_node.xy_name != self.next_goal_node.xy_name:
+            self.reached_the_goal = False
+            return
+        if not self.reached_the_goal:
+            self.reached_the_goal = True
+            self.latest_arrival = iteration
 
     def build_plan(self, **kwargs):
         nodes = kwargs['nodes']
@@ -60,6 +69,7 @@ class EnvLifelongMAPF:
         # for a single run
         self.start_nodes = None
         self.first_goal_nodes = None
+        self.iteration = None
 
         # for plotting
         self.middle_plot = kwargs['middle_plot']
@@ -73,6 +83,7 @@ class EnvLifelongMAPF:
             self.fig, self.ax = plt.subplots(1, 2, figsize=(14, 7))
 
     def reset(self, same_start):
+        self.iteration = 0
         first_run = same_start and self.start_nodes is None
         if first_run or not same_start:
             self.start_nodes = random.sample(self.nodes, self.n_agents)
@@ -92,6 +103,14 @@ class EnvLifelongMAPF:
             actions[agent.name] = next_node.xy_name
         return actions
 
+    def _classical_mapf_termination(self):
+        if not self.classical_mapf:
+            return False
+        for agent in self.agents:
+            if not agent.reached_the_goal:
+                return False
+        return True
+
     def step(self, actions):
         """
         Events might be:
@@ -100,11 +119,12 @@ class EnvLifelongMAPF:
         (3) a collision
         (4) no plan for any agent
         """
+        self.iteration += 1
         self._execute_actions(actions)
         agents_names_with_new_goals = self._execute_event_new_goal()
         observations = self._get_observations(agents_names_with_new_goals)
         rewards = {}
-        termination = False
+        termination = self._classical_mapf_termination()
         info = {}
         return observations, rewards, termination, info
 
@@ -136,6 +156,7 @@ class EnvLifelongMAPF:
                 'prev_node': agent.prev_node,
                 'next_goal_node': agent.next_goal_node,
                 'closed_goal_nodes': agent.closed_goal_nodes,
+                'latest_arrival': agent.latest_arrival,
                 # 'nei_list': [nei.name for nei in agent.nei_list]
             }
         return observations
@@ -145,6 +166,8 @@ class EnvLifelongMAPF:
             next_node_name = actions[agent.name]
             agent.prev_node = agent.curr_node
             agent.curr_node = self.nodes_dict[next_node_name]
+            if self.classical_mapf:
+                agent.latest_arrival_at_the_goal(self.iteration)
         # checks
         check_if_nei_pos(self.agents)
         check_if_vc(self.agents)

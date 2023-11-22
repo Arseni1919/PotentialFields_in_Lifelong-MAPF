@@ -159,6 +159,7 @@ def build_constraints(nodes, other_paths):
     v_constr_dict = {node.xy_name: [] for node in nodes}
     e_constr_dict = {node.xy_name: [] for node in nodes}
     perm_constr_dict = {node.xy_name: [] for node in nodes}
+    xyt_problem = False
 
     for agent_name, path in other_paths.items():
         if len(path) > 0:
@@ -174,8 +175,9 @@ def build_constraints(nodes, other_paths):
                 # edge
                 if prev_node.xy_name != node.xy_name:
                     e_constr_dict[f'{prev_node.x}_{prev_node.y}'].append((node.x, node.y, t))
+                    xyt_problem = True
                 prev_node = node
-    return v_constr_dict, e_constr_dict, perm_constr_dict
+    return v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem
 
 
 @lru_cache(maxsize=128)

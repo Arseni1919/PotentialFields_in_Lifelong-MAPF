@@ -32,6 +32,8 @@ def test_single_alg(alg, **kwargs):
     # to_save_results = False
     # file_dir = f'logs_for_plots/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_MAP-{img_dir[:-4]}.json'
 
+    if classical_mapf:
+        iterations = int(1e6)
     # --------------------------------------------------- #
     # --------------------------------------------------- #
 
@@ -89,7 +91,7 @@ def test_single_alg(alg, **kwargs):
 
             # unexpected termination
             if termination:
-                env.close()
+                break
 
     plt.show()
 

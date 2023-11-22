@@ -250,7 +250,7 @@ def merge_agents_lists(statistics_dict, alg_name, n_agents_list, list_type, is_j
 def plot_env_field(ax, info):
     ax.cla()
     # nodes = info['nodes']
-    a_name = info['agent'].name if 'agent' in info else 'agent_0'
+    a_name = info['i_agent'].name if 'i_agent' in info else 'agent_0'
     iterations = info["iterations"]
     n_agents = info['n_agents']
     img_dir = info['img_dir']
@@ -284,8 +284,8 @@ def plot_env_field(ax, info):
 def plot_magnet_agent_view(ax, info):
     ax.cla()
     # paths_dict = info['paths_dict']
-    agent = info['p_agent']
-    nodes = info['p_nodes']
+    agent = info['i_agent']
+    nodes = info['i_nodes']
     side_x, side_y = info['map_dim']
     t = info['i']
 
@@ -794,6 +794,46 @@ def plot_avr_nearby_agents(ax, info):
     ax.set_xticks(n_agents_list)
     ax.set_xlabel('N agents', labelpad=-1)
     set_plot_title(ax, f'Avr. N of Nearby Agents')
+    set_legend(ax)
+
+
+def plot_soc(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    for i_alg in alg_names:
+        soc_list = []
+        for n_a in n_agents_list:
+            soc_list.append(np.mean(info[i_alg][f'{n_a}']['soc']))
+        ax.plot(n_agents_list, soc_list, '-o', label=f'{i_alg}')
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents')
+    ax.set_ylabel('Average SoC')
+    ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_legend(ax)
+
+
+def plot_makespan(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    for i_alg in alg_names:
+        makespan_list = []
+        for n_a in n_agents_list:
+            makespan_list.append(np.mean(info[i_alg][f'{n_a}']['makespan']))
+        ax.plot(n_agents_list, makespan_list, '-^', label=f'{i_alg}')
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents')
+    ax.set_ylabel('Average Makespan')
+    ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
     set_legend(ax)
 
 

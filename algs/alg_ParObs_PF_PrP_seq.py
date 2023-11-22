@@ -41,12 +41,14 @@ class ParObsPFPrPAgent:
         self.nei_pfs = None
         self.h, self.w = set_h_and_w(self)
         self.pf_weight = set_pf_weight(self)
+        self.latest_arrival = None
 
     def update_obs(self, obs, **kwargs):
         self.curr_node = obs['curr_node']
         self.prev_node = obs['prev_node']
         self.next_goal_node = obs['next_goal_node']
         self.closed_goal_nodes = obs['closed_goal_nodes']
+        self.latest_arrival = obs['latest_arrival']
         self.heuristic_value = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
 
     def clean_nei(self):
@@ -186,7 +188,7 @@ class ParObsPFPrPAgent:
         nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
         # nei_h_agents_names = [a.name for a in nei_h_agents]
         sub_results = create_sub_results(nei_h_agents)
-        v_constr_dict, e_constr_dict, perm_constr_dict = build_constraints(self.nodes, sub_results)
+        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
 
         # build nei-PFs
         if self.pf_weight == 0:
@@ -200,7 +202,7 @@ class ParObsPFPrPAgent:
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
                                         agent_name=self.name,
-                                        nei_pfs=self.nei_pfs, k_time=self.w)
+                                        nei_pfs=self.nei_pfs, k_time=self.w, xyt_problem=xyt_problem)
         if new_plan is not None:
             # pop out the current location, because you will order to move to the next location
             self.plan_succeeded = True
@@ -428,8 +430,8 @@ class AlgParObsPFPrPSeq:
         actions = {agent.name: agent.choose_action() for agent in self.agents}
 
         alg_info = {
-            'p_agent': self.agents_dict['agent_0'],
-            'p_nodes': self.nodes,
+            'i_agent': self.agents_dict['agent_0'],
+            'i_nodes': self.nodes,
             'alg_name': self.alg_name,
             'time_to_think_limit': self.time_to_think_limit,
         }
@@ -444,10 +446,10 @@ class AlgParObsPFPrPSeq:
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
 def main():
     # Alg params
-    # alg_name = 'PrP'
+    alg_name = 'PrP'
     # alg_name = 'PF-PrP'
     # alg_name = 'ParObs-PrP'
-    alg_name = 'ParObs-PF-PrP'
+    # alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
         'PrP': {},
@@ -476,9 +478,8 @@ def main():
             # 'pf_weight': 10,
             # 'pf_size': 'h',
             # 'pf_size': 5,
-            'pf_size': 3,
+            'pf_size': 4,
             # 'pf_size': 2,
-            'pf_shape': 2,
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
@@ -495,20 +496,20 @@ def main():
         seed=123,
         PLOT_PER=1,
         PLOT_RATE=0.001,
-        PLOT_FROM=10,
+        PLOT_FROM=1,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        # iterations=200,
+        iterations=200,
         # iterations=100,
-        iterations=50,
-        n_agents=500,
+        # iterations=50,
+        n_agents=40,
         n_problems=1,
-        # classical_mapf=True,
-        classical_mapf=False,
+        classical_mapf=True,
+        # classical_mapf=False,
         time_to_think_limit=10,  # seconds
 
         # Map
