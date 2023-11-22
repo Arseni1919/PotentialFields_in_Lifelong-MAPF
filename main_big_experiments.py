@@ -25,12 +25,13 @@ def save_results(**kwargs):
 
 
 def show_results(**kwargs):
+    plt.close()
     file_dir = kwargs['file_dir']
     with open(f'{file_dir}', 'r') as openfile:
         # Reading from json file
         logs_dict = json.load(openfile)
         fig,ax = plt.subplots()
-        plot_throughput(ax, info={'logs_dict': logs_dict})
+        plot_throughput(ax, info=logs_dict)
         plt.show()
 
 
@@ -135,14 +136,14 @@ def run_big_experiments(**kwargs):
 
                 # for rendering
                 if middle_plot:
-                    plot_throughput(ax, info={'logs_dict': logs_dict})
+                    plot_throughput(ax, info=logs_dict)
                     plt.pause(0.001)
 
     if to_save_results:
         file_dir = save_results(
             algorithms=algorithms, runs_per_n_agents=runs_per_n_agents, img_dir=img_dir, logs_dict=logs_dict
         )
-        # show_results(file_dir=file_dir)
+        show_results(file_dir=file_dir)
     # final print
     print('\n###################################################')
     print('###################################################')
@@ -168,19 +169,21 @@ def main():
         to_save_results=False,
 
         # ------------------------- For Simulation
-        # n_agents_list=[450],
+        # n_agents_list=[500],
         # n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
-        n_agents_list=[270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
+        # n_agents_list=[270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
+        # n_agents_list=[50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
+        n_agents_list=[400, 500, 600, 700],
         # n_agents_list=[210, 230, 250, 270, 290, 310],
-        # n_agents_list=[10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310],
+        # n_agents_list=[90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310, 330,],
         # n_agents_list=[10, 30, 50, 70, 90, 110],
         # n_agents_list=[80, 100, 120, 140, 160, 180, 200, 220, 240, 260],
-        runs_per_n_agents=2,
-        # runs_per_n_agents=1,
+        # runs_per_n_agents=2,
+        runs_per_n_agents=1,
 
         # ------------------------- For Env
-        # iterations=200,
-        iterations=100,
+        iterations=200,
+        # iterations=100,
         # iterations=50,
 
         # ------------------------- For algs
@@ -192,12 +195,12 @@ def main():
 
             # AlgLNS2Seq(alg_name='LNS2', params={'big_N': 5}),
             # AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
-            AlgLNS2Seq(alg_name='ParObs-PF(0.1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='ParObs-PF(0.5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.5, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(0.1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.1, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(0.5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.5, 'pf_size': 3}),
             AlgLNS2Seq(alg_name='ParObs-PF(1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='ParObs-PF(2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 2, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='ParObs-PF(5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 5, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 2, 'pf_size': 3}),
+            # AlgLNS2Seq(alg_name='ParObs-PF(5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 5, 'pf_size': 3}),
             # AlgLNS2Seq(alg_name='(long_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'long_paths'}),
             # AlgLNS2Seq(alg_name='(short_paths)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'short_paths'}),
             # AlgLNS2Seq(alg_name='(my_h_short)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'my_h_short'}),
@@ -206,17 +209,18 @@ def main():
         ],
         # limits
         # time_to_think_limit=1,  # seconds
-        time_to_think_limit=5,  # seconds
+        # time_to_think_limit=5,  # seconds
         # time_to_think_limit=10,  # seconds
-        # time_to_think_limit=30,  # seconds
+        time_to_think_limit=30,  # seconds
         # time_to_think_limit=60,  # seconds
 
         # ------------------------- Map
-        img_dir='empty-32-32.map'  # 32-32
-        # img_dir='random-32-32-10.map'  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir = 'random-32-32-20.map'  # 32-32
-        # img_dir = 'room-32-32-4.map'  # 32-32
-        # img_dir = 'maze-32-32-2.map'  # 32-32
+        # img_dir='empty-32-32.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='random-32-32-20.map',  # 32-32
+        # img_dir='room-32-32-4.map',  # 32-32
+        # img_dir='maze-32-32-2.map',  # 32-32
+        img_dir='empty-48-48.map',  # 48-48
     )
     plt.show()
 

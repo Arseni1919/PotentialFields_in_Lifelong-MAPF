@@ -139,7 +139,8 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 
             self._solve_with_PrP()
             self._replace_old_plans()
-            print(f'\n{num_of_confs=}')
+            # print(f'\n{num_of_confs=}')
+            print(f'\r{num_of_confs=}', end='')
 
             # limit check
             end_time = time.time() - start_time
