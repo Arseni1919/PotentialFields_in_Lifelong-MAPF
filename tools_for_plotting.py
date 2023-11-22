@@ -803,6 +803,8 @@ def plot_throughput(ax, info):
     alg_names = logs_dict['alg_names']
     n_agents_list = logs_dict['n_agents_list']
     img_dir = logs_dict['img_dir']
+    time_to_think_limit = logs_dict['time_to_think_limit']
+    iterations = logs_dict['iterations']
 
     for i_alg in alg_names:
         y_list = []
@@ -813,7 +815,7 @@ def plot_throughput(ax, info):
     ax.set_xticks(n_agents_list)
     ax.set_xlabel('N agents')
     ax.set_ylabel('Average Throughput')
-    ax.set_title(f'{img_dir[:-4]} Map')
+    ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.')
     set_legend(ax)
     # ax.set_xlabel('N agents', labelpad=-1)
     # ax.set_ylabel('Average Throughput', labelpad=-1)

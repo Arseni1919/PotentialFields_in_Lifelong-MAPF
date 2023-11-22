@@ -283,18 +283,6 @@ class AlgParObsPFPrPSeq:
     def _reshuffle_agents(self):
         # print(f'\n**************** random reshuffle ****************\n')
 
-        # agents = self.agents[:]
-        # agents.sort(reverse=True, key=lambda a: a.heuristic_value)
-        # half = round(len(agents) / 2)
-        # h_agents = agents[:half]
-        # l_agents = agents[half:]
-        # random.shuffle(h_agents)
-        # random.shuffle(l_agents)
-        # # h_agents.extend(l_agents)
-        # # self.agents = h_agents
-        # l_agents.extend(h_agents)
-        # self.agents = l_agents
-
         stuck_agents = [agent for agent in self.agents if not agent.plan_succeeded]
         good_agents = [agent for agent in self.agents if agent.plan_succeeded]
         random.shuffle(stuck_agents)
@@ -443,6 +431,7 @@ class AlgParObsPFPrPSeq:
             'p_agent': self.agents_dict['agent_0'],
             'p_nodes': self.nodes,
             'alg_name': self.alg_name,
+            'time_to_think_limit': self.time_to_think_limit,
         }
 
         # checks

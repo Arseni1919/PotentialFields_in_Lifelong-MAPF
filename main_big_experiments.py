@@ -69,6 +69,8 @@ def run_big_experiments(**kwargs):
     logs_dict['alg_names'] = [alg.alg_name for alg in algorithms]
     logs_dict['n_agents_list'] = n_agents_list
     logs_dict['img_dir'] = img_dir
+    logs_dict['time_to_think_limit'] = time_to_think_limit
+    logs_dict['iterations'] = iterations
 
     if middle_plot:
         fig, ax = plt.subplots()
@@ -141,6 +143,13 @@ def run_big_experiments(**kwargs):
             algorithms=algorithms, runs_per_n_agents=runs_per_n_agents, img_dir=img_dir, logs_dict=logs_dict
         )
         # show_results(file_dir=file_dir)
+    # final print
+    print('\n###################################################')
+    print('###################################################')
+    print('###################################################')
+    print('###################################################')
+    print('###################################################')
+    print('finished')
 
 
 def main():
@@ -159,8 +168,9 @@ def main():
         to_save_results=False,
 
         # ------------------------- For Simulation
-        # n_agents_list=[390],
-        n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
+        # n_agents_list=[450],
+        # n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
+        n_agents_list=[270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
         # n_agents_list=[210, 230, 250, 270, 290, 310],
         # n_agents_list=[10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310],
         # n_agents_list=[10, 30, 50, 70, 90, 110],
