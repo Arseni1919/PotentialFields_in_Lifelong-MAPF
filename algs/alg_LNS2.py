@@ -222,6 +222,7 @@ def main():
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
+        rhcr_mapf_limit=1000,
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
