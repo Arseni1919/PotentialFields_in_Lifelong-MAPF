@@ -336,6 +336,7 @@ class AlgParObsPFPrPSeq:
     def _build_plans_restart(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return
+        start_time = time.time()
         self._update_order()
 
         h_agents = []
@@ -346,6 +347,11 @@ class AlgParObsPFPrPSeq:
             if not agent.plan_succeeded:
                 need_to_shuffle = True
 
+            # limit check
+            end_time = time.time() - start_time
+            if end_time > self.time_to_think_limit:
+                break
+
         # IStay
         self._implement_istay()
 
@@ -355,6 +361,7 @@ class AlgParObsPFPrPSeq:
     def _build_plans_persist(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return
+        start_time = time.time()
         # self._update_order()
         self._reshuffle_agents()
 
@@ -363,6 +370,11 @@ class AlgParObsPFPrPSeq:
         for agent in self.agents:
             agent.build_plan(h_agents)
             h_agents.append(agent)
+
+            # limit check
+            end_time = time.time() - start_time
+            if end_time > self.time_to_think_limit:
+                break
 
         # IStay
         self._implement_istay()

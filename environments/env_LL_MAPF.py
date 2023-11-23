@@ -51,7 +51,6 @@ class EnvLifelongMAPF:
         self.n_agents = n_agents
         self.agents: List[SimAgent] = None
         self.img_dir = img_dir
-        self.one_shot_mapf = kwargs['one_shot_mapf'] if 'one_shot_mapf' in kwargs else False
         self.classical_rhcr_mapf = kwargs['classical_rhcr_mapf'] if 'classical_rhcr_mapf' in kwargs else False
         if self.classical_rhcr_mapf:
             self.rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
@@ -110,6 +109,16 @@ class EnvLifelongMAPF:
             return True, 1
         return False, 0
 
+    def _process_single_shot(self, actions):
+        to_continue = True
+        observations, succeeded, termination, info = None, None, None, None
+        if 'one_shot' in actions:
+            to_continue = False
+            observations = self._get_observations([])
+            succeeded = True
+            succeeded, termination, info = {}, True, {}
+        return to_continue, (observations, succeeded, termination, info)
+
     def step(self, actions):
         """
         Events might be:
@@ -118,6 +127,10 @@ class EnvLifelongMAPF:
         (3) a collision
         (4) no plan for any agent
         """
+        # to_continue, return_values = self._process_single_shot(actions)
+        # if not to_continue:
+        #     observations, succeeded, termination, info = return_values
+        #     return observations, succeeded, termination, info
         self.iteration += 1
         self._execute_actions(actions)
         agents_names_with_new_goals = self._execute_event_new_goal()
