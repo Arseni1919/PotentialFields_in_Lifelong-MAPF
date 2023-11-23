@@ -22,7 +22,7 @@ def test_single_alg(alg, **kwargs):
     iterations = kwargs['iterations']
     n_agents = kwargs['n_agents']
     n_problems = kwargs['n_problems']
-    classical_mapf = kwargs['classical_mapf']
+    classical_rhcr_mapf = kwargs['classical_rhcr_mapf']
     time_to_think_limit = kwargs['time_to_think_limit']
     # Map
     img_dir = kwargs['img_dir']
@@ -32,7 +32,7 @@ def test_single_alg(alg, **kwargs):
     # to_save_results = False
     # file_dir = f'logs_for_plots/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_MAP-{img_dir[:-4]}.json'
 
-    if classical_mapf:
+    if classical_rhcr_mapf:
         iterations = int(1e6)
     # --------------------------------------------------- #
     # --------------------------------------------------- #
@@ -41,7 +41,7 @@ def test_single_alg(alg, **kwargs):
     set_seed(random_seed, seed)
     env = EnvLifelongMAPF(
         n_agents=n_agents, img_dir=img_dir,
-        classical_mapf=classical_mapf,
+        classical_rhcr_mapf=classical_rhcr_mapf,
         plot_per=PLOT_PER, plot_rate=PLOT_RATE, plot_from=PLOT_FROM,
         middle_plot=middle_plot, final_plot=final_plot,
     )

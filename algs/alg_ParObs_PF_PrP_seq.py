@@ -508,8 +508,8 @@ def main():
         # iterations=50,
         n_agents=40,
         n_problems=1,
-        classical_mapf=True,
-        # classical_mapf=False,
+        classical_rhcr_mapf=True,
+        # classical_rhcr_mapf=False,
         time_to_think_limit=10,  # seconds
 
         # Map

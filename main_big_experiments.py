@@ -37,17 +37,18 @@ def run_big_experiments(**kwargs):
     # ------------------------- For Simulation
     n_agents_list = kwargs['n_agents_list']
     runs_per_n_agents = kwargs['runs_per_n_agents']
-    classical_mapf = kwargs['classical_mapf']
+    classical_rhcr_mapf = kwargs['classical_rhcr_mapf']
 
     # ------------------------- For Env
     iterations = kwargs['iterations']
-    if classical_mapf:
+    if classical_rhcr_mapf:
         iterations = int(1e6)
 
     # ------------------------- For algs
     algorithms = kwargs['algorithms']
     # limits
     time_to_think_limit = kwargs['time_to_think_limit']  # seconds
+    rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
 
     # ------------------------- Map
     img_dir = kwargs['img_dir']
@@ -59,20 +60,21 @@ def run_big_experiments(**kwargs):
                 'n_closed_goals': [],
                 'soc': [],
                 'makespan': [],
+                'sr': [],
             } for n_agents in n_agents_list
         } for alg in algorithms
     }
     logs_dict['alg_names'] = [alg.alg_name for alg in algorithms]
     logs_dict['n_agents_list'] = n_agents_list
     logs_dict['runs_per_n_agents'] = runs_per_n_agents
-    logs_dict['classical_mapf'] = classical_mapf
+    logs_dict['classical_rhcr_mapf'] = classical_rhcr_mapf
     logs_dict['img_dir'] = img_dir
     logs_dict['time_to_think_limit'] = time_to_think_limit
     logs_dict['iterations'] = iterations
 
     if middle_plot:
-        if classical_mapf:
-            fig, ax = plt.subplots(1, 2, figsize=(12, 7))
+        if classical_rhcr_mapf:
+            fig, ax = plt.subplots(1, 3, figsize=(12, 7))
         else:
             fig, ax = plt.subplots()
 
@@ -81,7 +83,8 @@ def run_big_experiments(**kwargs):
 
     # n agents
     for n_agents in n_agents_list:
-        env = EnvLifelongMAPF(n_agents=n_agents, img_dir=img_dir, classical_mapf=classical_mapf,
+        env = EnvLifelongMAPF(n_agents=n_agents, img_dir=img_dir,
+                              classical_rhcr_mapf=classical_rhcr_mapf, rhcr_mapf_limit=rhcr_mapf_limit,
                               middle_plot=False, final_plot=False, plot_per=1, plot_rate=0.001, plot_from=50,
                               path_to_maps='maps', path_to_heuristics='logs_for_heuristics')
         # n runs
@@ -96,7 +99,7 @@ def run_big_experiments(**kwargs):
                 start_time = time.time()
                 info = {
                     'iterations': iterations,
-                    'n_problems': i_run,
+                    'n_problems': runs_per_n_agents,
                     'n_agents': n_agents,
                     'img_dir': img_dir,
                     'map_dim': env.map_dim,
@@ -110,7 +113,7 @@ def run_big_experiments(**kwargs):
                     actions, alg_info = alg.get_actions(observations, iteration=i)
 
                     # step
-                    observations, rewards, termination, step_info = env.step(actions)
+                    observations, succeeded, termination, step_info = env.step(actions)
 
                     # render
                     info.update(observations)
@@ -131,20 +134,23 @@ def run_big_experiments(**kwargs):
                     # print(f'\n ##########################################')
 
                 # logs
-                if classical_mapf:
-                    soc = sum([agent.latest_arrival for agent in env.agents])
-                    makespan = max([agent.latest_arrival for agent in env.agents])
-                    logs_dict[alg.alg_name][f'{n_agents}']['soc'].append(soc)
-                    logs_dict[alg.alg_name][f'{n_agents}']['makespan'].append(makespan)
+                if classical_rhcr_mapf:
+                    logs_dict[alg.alg_name][f'{n_agents}']['sr'].append(succeeded)
+                    if succeeded:
+                        soc = sum([agent.latest_arrival for agent in env.agents])
+                        makespan = max([agent.latest_arrival for agent in env.agents])
+                        logs_dict[alg.alg_name][f'{n_agents}']['soc'].append(soc)
+                        logs_dict[alg.alg_name][f'{n_agents}']['makespan'].append(makespan)
                 else:
                     n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in alg.agents])
                     logs_dict[alg.alg_name][f'{n_agents}']['n_closed_goals'].append(n_closed_goals)
 
                 # for rendering
                 if middle_plot:
-                    if classical_mapf:
-                        plot_soc(ax[0], info=logs_dict)
-                        plot_makespan(ax[1], info=logs_dict)
+                    if classical_rhcr_mapf:
+                        plot_sr(ax[0], info=logs_dict)
+                        plot_soc(ax[1], info=logs_dict)
+                        plot_makespan(ax[2], info=logs_dict)
                     else:
                         plot_throughput(ax, info=logs_dict)
                     plt.pause(0.001)
@@ -181,18 +187,22 @@ def main():
         # to_save_results=False,
 
         # ------------------------- For Simulation
-        # classical_mapf=True,
-        classical_mapf=False,
+        classical_rhcr_mapf=True,
+        # classical_rhcr_mapf=False,
+
+        n_agents_list=[500],
         # n_agents_list=[50, 100, 150, 200],
         # n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
         # n_agents_list=[270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
-        n_agents_list=[50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
+        # n_agents_list=[50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
         # n_agents_list=[400, 500, 600, 700],
         # n_agents_list=[210, 230, 250, 270, 290, 310],
         # n_agents_list=[90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310, 330,],
         # n_agents_list=[10, 30, 50, 70, 90, 110],
         # n_agents_list=[80, 100, 120, 140, 160, 180, 200, 220, 240, 260],
-        runs_per_n_agents=3,
+
+        runs_per_n_agents=20,
+        # runs_per_n_agents=3,
         # runs_per_n_agents=2,
         # runs_per_n_agents=1,
 
@@ -207,8 +217,9 @@ def main():
             # AlgParObsPFPrPSeq(alg_name='PF-PrP', params={'pf_weight': pf_weight, 'pf_size': pf_size}),
             # AlgLNS2Seq(alg_name='LNS2', params={'big_N': big_N}),
             # AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
-            AlgParObsPFPrPSeq(alg_name='ParObs-PrP', params={'h': h, 'w': w}),
-            AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+
+            # AlgParObsPFPrPSeq(alg_name='ParObs-PrP', params={'h': h, 'w': w}),
+            # AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
             AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
             AlgLNS2Seq(alg_name='ParObs-PF-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
 
@@ -250,9 +261,11 @@ def main():
         # time_to_think_limit=30,  # seconds
         # time_to_think_limit=60,  # seconds
 
+        rhcr_mapf_limit=1000,
+
         # ------------------------- Map
-        # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='empty-32-32.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32

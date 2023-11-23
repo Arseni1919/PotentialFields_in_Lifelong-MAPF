@@ -19,12 +19,6 @@ class SimAgent:
         self.latest_arrival = None
         # self.nei_list, self.nei_dict = [], {}
 
-    # def clean_nei(self):
-    #     self.nei_list, self.nei_dict = [], {}
-    #
-    # def add_nei(self, nei_agent):
-    #     self.nei_list.append(nei_agent)
-    #     self.nei_dict[nei_agent.name] = nei_agent
     def latest_arrival_at_the_goal(self, iteration):
         if self.curr_node.xy_name != self.next_goal_node.xy_name:
             self.reached_the_goal = False
@@ -57,7 +51,10 @@ class EnvLifelongMAPF:
         self.n_agents = n_agents
         self.agents: List[SimAgent] = None
         self.img_dir = img_dir
-        self.classical_mapf = kwargs['classical_mapf'] if 'classical_mapf' in kwargs else False
+        self.one_shot_mapf = kwargs['one_shot_mapf'] if 'one_shot_mapf' in kwargs else False
+        self.classical_rhcr_mapf = kwargs['classical_rhcr_mapf'] if 'classical_rhcr_mapf' in kwargs else False
+        if self.classical_rhcr_mapf:
+            self.rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
         path_to_maps = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
         self.map_dim = get_dims_from_pic(img_dir=img_dir, path=path_to_maps)
         self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
@@ -103,13 +100,15 @@ class EnvLifelongMAPF:
             actions[agent.name] = next_node.xy_name
         return actions
 
-    def _classical_mapf_termination(self):
-        if not self.classical_mapf:
-            return False
-        for agent in self.agents:
-            if not agent.reached_the_goal:
-                return False
-        return True
+    def _classical_rhcr_mapf_termination(self):
+        if self.classical_rhcr_mapf:
+            if self.iteration >= self.rhcr_mapf_limit:
+                return True, 0
+            for agent in self.agents:
+                if not agent.reached_the_goal:
+                    return False, 0
+            return True, 1
+        return False, 0
 
     def step(self, actions):
         """
@@ -123,10 +122,9 @@ class EnvLifelongMAPF:
         self._execute_actions(actions)
         agents_names_with_new_goals = self._execute_event_new_goal()
         observations = self._get_observations(agents_names_with_new_goals)
-        rewards = {}
-        termination = self._classical_mapf_termination()
+        termination, succeeded = self._classical_rhcr_mapf_termination()
         info = {}
-        return observations, rewards, termination, info
+        return observations, succeeded, termination, info
 
     def render(self, info):
         if self.middle_plot and info['i'] >= self.plot_from and info['i'] % self.plot_per == 0:
@@ -134,7 +132,7 @@ class EnvLifelongMAPF:
             plot_magnet_agent_view(self.ax[1], info)
             plt.pause(self.plot_rate)
         n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in self.agents])
-        print(f"\n\n[{len(self.agents)}][{info['alg_name']}] PROBLEM: {info['i_problem'] + 1}, ITERATION: {info['i'] + 1}\n"
+        print(f"\n\n[{len(self.agents)}][{info['alg_name']}] PROBLEM: {info['i_problem'] + 1}/{info['n_problems']}, ITERATION: {info['i'] + 1}\n"
               f"Total closed goals --------------------------------> {n_closed_goals}\n"
               f"Total time --------------------------------> {info['runtime']: .2f}s\n")
 
@@ -166,7 +164,7 @@ class EnvLifelongMAPF:
             next_node_name = actions[agent.name]
             agent.prev_node = agent.curr_node
             agent.curr_node = self.nodes_dict[next_node_name]
-            if self.classical_mapf:
+            if self.classical_rhcr_mapf:
                 agent.latest_arrival_at_the_goal(self.iteration)
         # checks
         check_if_nei_pos(self.agents)
@@ -174,7 +172,7 @@ class EnvLifelongMAPF:
         check_if_ec(self.agents)
 
     def _execute_event_new_goal(self):
-        if self.classical_mapf:
+        if self.classical_rhcr_mapf:
             return []
         goals_names_list = [agent.next_goal_node.xy_name for agent in self.agents]
         available_nodes = [node for node in self.nodes if node.xy_name not in goals_names_list]

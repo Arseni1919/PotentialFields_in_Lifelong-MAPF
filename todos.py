@@ -35,7 +35,9 @@ TODO:
 
 - maybe implement single-shot MAPF in the simulator
 - maybe implement SDS
+- maybe implement the full LNS2
 - BUG: additional step
+- examine parameters on different maps
 
 - maybe implement learning for the PF parameters with RL
 - write a paper

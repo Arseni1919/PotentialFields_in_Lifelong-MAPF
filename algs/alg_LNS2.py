@@ -219,8 +219,8 @@ def main():
         # iterations=100,
         n_agents=250,
         n_problems=1,
-        classical_mapf=True,
-        # classical_mapf=False,
+        classical_rhcr_mapf=True,
+        # classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
 
         # Map

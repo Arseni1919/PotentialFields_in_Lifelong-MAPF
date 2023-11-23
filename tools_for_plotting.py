@@ -797,6 +797,26 @@ def plot_avr_nearby_agents(ax, info):
     set_legend(ax)
 
 
+def plot_sr(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    for i_alg in alg_names:
+        sr_list = []
+        for n_a in n_agents_list:
+            sr_list.append(np.sum(info[i_alg][f'{n_a}']['sr']) / len(info[i_alg][f'{n_a}']['sr']))
+        ax.plot(n_agents_list, sr_list, '-^', label=f'{i_alg}')
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents')
+    ax.set_ylabel('Success Rate')
+    ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_legend(ax)
+
+
 def plot_soc(ax, info):
     ax.cla()
     alg_names = info['alg_names']
