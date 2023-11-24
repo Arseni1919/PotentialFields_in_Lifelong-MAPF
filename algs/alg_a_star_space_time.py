@@ -82,6 +82,7 @@ def do_reset_for_one_node(curr_node):
 def reset_nodes(start, goal, nodes, **kwargs):
     # with concurrent.futures.ProcessPoolExecutor() as executor:
     #     executor.map(do_reset_for_one_node, nodes)
+    # _ = [do_reset_for_one_node(node) for node in nodes]
     _ = [node.reset() for node in nodes]
     start.reset(**kwargs)
     return start, goal, nodes

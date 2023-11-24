@@ -21,7 +21,7 @@ def save_results(**kwargs):
     json_object = json.dumps(logs_dict, indent=4)
     with open(file_dir, "w") as outfile:
         outfile.write(json_object)
-    # Results saved.
+    print(f'Results saved in: {file_dir}')
     return file_dir
 
 
@@ -196,11 +196,13 @@ def main():
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
 
-        # n_agents_list=[500],
-        n_agents_list=[100, 150],
+        n_agents_list=[50],
+        # n_agents_list=[100, 150],
         # n_agents_list=[50, 100, 150, 200],
         # n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
         # n_agents_list=[270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
+        # n_agents_list=[450, 500],
+        # n_agents_list=[50, 100, 150, 200, 250, 300, 350, 400],
         # n_agents_list=[50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
         # n_agents_list=[400, 500, 600, 700],
         # n_agents_list=[210, 230, 250, 270, 290, 310],
@@ -209,26 +211,28 @@ def main():
         # n_agents_list=[80, 100, 120, 140, 160, 180, 200, 220, 240, 260],
 
         # runs_per_n_agents=20,
+        runs_per_n_agents=15,
+        # runs_per_n_agents=10,
         # runs_per_n_agents=3,
-        runs_per_n_agents=2,
+        # runs_per_n_agents=2,
         # runs_per_n_agents=1,
 
         # ------------------------- For Env
         # iterations=200,
-        # iterations=100,
-        iterations=50,
+        iterations=100,
+        # iterations=50,
 
         # ------------------------- For algs
         algorithms=[
-            # AlgParObsPFPrPSeq(alg_name='PrP', params={'one_shot': True}),
-            # AlgParObsPFPrPSeq(alg_name='PF-PrP', params={'one_shot': True, 'pf_weight': pf_weight, 'pf_size': pf_size}),
-            # AlgLNS2Seq(alg_name='LNS2', params={'one_shot': True, 'big_N': big_N}),
-            # AlgLNS2Seq(alg_name='PF-LNS2', params={'one_shot': True, 'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
+            # AlgParObsPFPrPSeq(alg_name='Classical PrP', params={'one_shot': True}),
+            # AlgParObsPFPrPSeq(alg_name='PF Classical PrP', params={'one_shot': True, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+            # AlgLNS2Seq(alg_name='Simple LNS2', params={'one_shot': True, 'big_N': big_N}),
+            # AlgLNS2Seq(alg_name='PF Simple LNS2', params={'one_shot': True, 'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
 
-            AlgParObsPFPrPSeq(alg_name='ParObs-PrP', params={'h': h, 'w': w}),
-            AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
-            AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
-            AlgLNS2Seq(alg_name='ParObs-PF-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+            AlgParObsPFPrPSeq(alg_name='PrP', params={'h': h, 'w': w}),
+            AlgParObsPFPrPSeq(alg_name='PF-PrP', params={'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+            AlgLNS2Seq(alg_name='LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
+            AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
 
             # AlgLNS2Seq(alg_name='ParObs-PF(0.1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.1, 'pf_size': 3}),
             # AlgLNS2Seq(alg_name='ParObs-PF(0.5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.5, 'pf_size': 3}),

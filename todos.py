@@ -27,13 +27,13 @@ DONE:
     - set the limit for calculations
     - examine different PF variations
 - save the data
-improve _implement_istay()
+- improve _implement_istay()
+- implement single-shot MAPF in the simulator
 
 ##########################################
 ##########################################
 TODO:
 
-- maybe implement single-shot MAPF in the simulator
 - maybe implement SDS
 - maybe implement the full LNS2
 - BUG: additional step
