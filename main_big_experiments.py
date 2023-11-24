@@ -48,6 +48,7 @@ def run_big_experiments(**kwargs):
     algorithms = kwargs['algorithms']
     # limits
     time_to_think_limit = kwargs['time_to_think_limit']  # seconds
+    global_time_limit = kwargs['global_time_limit']  # seconds
     rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
 
     # ------------------------- Map
@@ -61,6 +62,7 @@ def run_big_experiments(**kwargs):
                 'soc': [],
                 'makespan': [],
                 'sr': [],
+                'time': [],
             } for n_agents in n_agents_list
         } for alg in algorithms
     }
@@ -70,6 +72,7 @@ def run_big_experiments(**kwargs):
     logs_dict['classical_rhcr_mapf'] = classical_rhcr_mapf
     logs_dict['img_dir'] = img_dir
     logs_dict['time_to_think_limit'] = time_to_think_limit
+    logs_dict['global_time_limit'] = global_time_limit
     logs_dict['iterations'] = iterations
 
     if middle_plot:
@@ -84,7 +87,8 @@ def run_big_experiments(**kwargs):
     # n agents
     for n_agents in n_agents_list:
         env = EnvLifelongMAPF(n_agents=n_agents, img_dir=img_dir,
-                              classical_rhcr_mapf=classical_rhcr_mapf, rhcr_mapf_limit=rhcr_mapf_limit,
+                              classical_rhcr_mapf=classical_rhcr_mapf,
+                              rhcr_mapf_limit=rhcr_mapf_limit, global_time_limit=global_time_limit,
                               middle_plot=False, final_plot=False, plot_per=1, plot_rate=0.001, plot_from=50,
                               path_to_maps='maps', path_to_heuristics='logs_for_heuristics')
         # n runs
@@ -141,6 +145,7 @@ def run_big_experiments(**kwargs):
                         makespan = max([agent.latest_arrival for agent in env.agents])
                         logs_dict[alg.alg_name][f'{n_agents}']['soc'].append(soc)
                         logs_dict[alg.alg_name][f'{n_agents}']['makespan'].append(makespan)
+                        logs_dict[alg.alg_name][f'{n_agents}']['time'].append(time.time() - start_time)
                 else:
                     n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in alg.agents])
                     logs_dict[alg.alg_name][f'{n_agents}']['n_closed_goals'].append(n_closed_goals)
@@ -150,7 +155,8 @@ def run_big_experiments(**kwargs):
                     if classical_rhcr_mapf:
                         plot_sr(ax[0], info=logs_dict)
                         plot_soc(ax[1], info=logs_dict)
-                        plot_makespan(ax[2], info=logs_dict)
+                        plot_time(ax[2], info=logs_dict)
+                        # plot_makespan(ax[2], info=logs_dict)
                     else:
                         plot_throughput(ax, info=logs_dict)
                     plt.pause(0.001)
@@ -187,11 +193,12 @@ def main():
         # to_save_results=False,
 
         # ------------------------- For Simulation
-        classical_rhcr_mapf=True,
-        # classical_rhcr_mapf=False,
+        # classical_rhcr_mapf=True,
+        classical_rhcr_mapf=False,
 
         # n_agents_list=[500],
-        n_agents_list=[50, 100, 150, 200],
+        n_agents_list=[100, 150],
+        # n_agents_list=[50, 100, 150, 200],
         # n_agents_list=[210, 230, 250, 270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
         # n_agents_list=[270, 290, 310, 330, 350, 370, 390, 410, 430, 450],
         # n_agents_list=[50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
@@ -213,15 +220,15 @@ def main():
 
         # ------------------------- For algs
         algorithms=[
-            AlgParObsPFPrPSeq(alg_name='PrP', params={}),
-            AlgParObsPFPrPSeq(alg_name='PF-PrP', params={'pf_weight': pf_weight, 'pf_size': pf_size}),
-            AlgLNS2Seq(alg_name='LNS2', params={'big_N': big_N}),
-            AlgLNS2Seq(alg_name='PF-LNS2', params={'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
+            # AlgParObsPFPrPSeq(alg_name='PrP', params={'one_shot': True}),
+            # AlgParObsPFPrPSeq(alg_name='PF-PrP', params={'one_shot': True, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+            # AlgLNS2Seq(alg_name='LNS2', params={'one_shot': True, 'big_N': big_N}),
+            # AlgLNS2Seq(alg_name='PF-LNS2', params={'one_shot': True, 'big_N': 5, 'pf_weight': 5, 'pf_size': 3}),
 
-            # AlgParObsPFPrPSeq(alg_name='ParObs-PrP', params={'h': h, 'w': w}),
-            # AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
-            # AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
-            # AlgLNS2Seq(alg_name='ParObs-PF-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+            AlgParObsPFPrPSeq(alg_name='ParObs-PrP', params={'h': h, 'w': w}),
+            AlgParObsPFPrPSeq(alg_name='ParObs-PF-PrP', params={'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
+            AlgLNS2Seq(alg_name='ParObs-LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
+            AlgLNS2Seq(alg_name='ParObs-PF-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size}),
 
             # AlgLNS2Seq(alg_name='ParObs-PF(0.1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.1, 'pf_size': 3}),
             # AlgLNS2Seq(alg_name='ParObs-PF(0.5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 0.5, 'pf_size': 3}),
@@ -255,13 +262,16 @@ def main():
             # AlgLNS2Seq(alg_name='ParObs-PF(sh-15)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size, 'pf_shape': 15}),
         ],
         # limits
-        time_to_think_limit=1,  # seconds
-        # time_to_think_limit=5,  # seconds
+        # time_to_think_limit=1,  # seconds
+        time_to_think_limit=5,  # seconds
         # time_to_think_limit=10,  # seconds
         # time_to_think_limit=30,  # seconds
         # time_to_think_limit=60,  # seconds
 
-        rhcr_mapf_limit=1000,
+        global_time_limit=60,  # seconds for MAPF(RHCR)
+        # global_time_limit=10,  # seconds for MAPF(RHCR)
+
+        rhcr_mapf_limit=10000,
 
         # ------------------------- Map
         img_dir='empty-32-32.map',  # 32-32

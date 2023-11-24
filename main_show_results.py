@@ -8,8 +8,15 @@ def show_results(**kwargs):
     with open(f'{file_dir}', 'r') as openfile:
         # Reading from json file
         logs_dict = json.load(openfile)
-        fig,ax = plt.subplots()
-        plot_throughput(ax, info=logs_dict)
+        classical_rhcr_mapf = logs_dict['classical_rhcr_mapf']
+        if classical_rhcr_mapf:
+            fig, ax = plt.subplots(1, 3, figsize=(12, 7))
+            plot_sr(ax[0], info=logs_dict)
+            plot_soc(ax[1], info=logs_dict)
+            plot_time(ax[2], info=logs_dict)
+        else:
+            fig, ax = plt.subplots()
+            plot_throughput(ax, info=logs_dict)
         plt.show()
 
 

@@ -857,6 +857,26 @@ def plot_makespan(ax, info):
     set_legend(ax)
 
 
+def plot_time(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    for i_alg in alg_names:
+        makespan_list = []
+        for n_a in n_agents_list:
+            makespan_list.append(np.mean(info[i_alg][f'{n_a}']['time']))
+        ax.plot(n_agents_list, makespan_list, '-^', label=f'{i_alg}')
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents')
+    ax.set_ylabel('Average Time To Solve')
+    ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_legend(ax)
+
+
 def plot_throughput(ax, info):
     ax.cla()
     alg_names = info['alg_names']

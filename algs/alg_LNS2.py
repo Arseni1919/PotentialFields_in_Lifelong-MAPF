@@ -127,9 +127,15 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 
         h_agents = []
         # need_to_shuffle = False
-        for agent in self.agents:
+        for i, agent in enumerate(self.agents):
             agent.build_plan(h_agents)
             h_agents.append(agent)
+
+            # limit check
+            end_time = time.time() - start_time
+            if end_time > self.time_to_think_limit:
+                self._cut_up_to_the_limit(i)
+                return
 
         while (num_of_confs := self._build_G_c()) > 0:
             V_v, v = self._select_random_conf_v()
@@ -147,7 +153,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
             end_time = time.time() - start_time
             if end_time > self.time_to_think_limit:
                 self._implement_istay()
-                break
+                return
 
 
 @use_profiler(save_dir='../stats/alg_lns2_seq.pstat')

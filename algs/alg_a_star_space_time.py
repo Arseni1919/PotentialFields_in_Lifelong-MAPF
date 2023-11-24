@@ -75,7 +75,13 @@ def get_node(successor_xy_name, node_current, nodes, nodes_dict, open_nodes, clo
     return Node(x=node.x, y=node.y, t=new_t, neighbours=node.neighbours), 'new'
 
 
+def do_reset_for_one_node(curr_node):
+    curr_node.reset()
+
+
 def reset_nodes(start, goal, nodes, **kwargs):
+    # with concurrent.futures.ProcessPoolExecutor() as executor:
+    #     executor.map(do_reset_for_one_node, nodes)
     _ = [node.reset() for node in nodes]
     start.reset(**kwargs)
     return start, goal, nodes

@@ -333,6 +333,12 @@ class AlgParObsPFPrPSeq:
                     standing_agents.add(agent2.name)
                     break
 
+    def _cut_up_to_the_limit(self, i):
+        if len(self.agents) >= i:
+            for failed_agent in self.agents[i + 1:]:
+                failed_agent.set_istay()
+        self._implement_istay()
+
     def _build_plans_restart(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return
@@ -341,7 +347,7 @@ class AlgParObsPFPrPSeq:
 
         h_agents = []
         need_to_shuffle = False
-        for agent in self.agents:
+        for i, agent in enumerate(self.agents):
             agent.build_plan(h_agents)
             h_agents.append(agent)
             if not agent.plan_succeeded:
@@ -350,7 +356,8 @@ class AlgParObsPFPrPSeq:
             # limit check
             end_time = time.time() - start_time
             if end_time > self.time_to_think_limit:
-                break
+                self._cut_up_to_the_limit(i)
+                return
 
         # IStay
         self._implement_istay()
@@ -367,17 +374,30 @@ class AlgParObsPFPrPSeq:
 
         # Persist
         h_agents = []
-        for agent in self.agents:
+        for i, agent in enumerate(self.agents):
             agent.build_plan(h_agents)
             h_agents.append(agent)
 
             # limit check
             end_time = time.time() - start_time
             if end_time > self.time_to_think_limit:
-                break
+                self._cut_up_to_the_limit(i)
+                return
 
         # IStay
         self._implement_istay()
+
+    def _add_one_shot_to_actions(self, actions):
+        if 'one_shot' in self.params:
+            actions['one_shot'] = self.params['one_shot']
+            actions['latest_arrivals'] = {}
+            actions["succeeded"] = True
+            for agent in self.agents:
+                if not agent.plan_succeeded:
+                    actions["succeeded"] = False
+                    break
+                else:
+                    actions['latest_arrivals'][agent.name] = len(agent.plan)
 
     def _build_plans(self):
         if self.h is None:
@@ -440,6 +460,7 @@ class AlgParObsPFPrPSeq:
 
         # choose the actions
         actions = {agent.name: agent.choose_action() for agent in self.agents}
+        self._add_one_shot_to_actions(actions)
 
         alg_info = {
             'i_agent': self.agents_dict['agent_0'],

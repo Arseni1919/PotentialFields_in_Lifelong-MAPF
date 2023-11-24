@@ -54,6 +54,7 @@ class EnvLifelongMAPF:
         self.classical_rhcr_mapf = kwargs['classical_rhcr_mapf'] if 'classical_rhcr_mapf' in kwargs else False
         if self.classical_rhcr_mapf:
             self.rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
+            self.global_time_limit = kwargs['global_time_limit']
         path_to_maps = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
         self.map_dim = get_dims_from_pic(img_dir=img_dir, path=path_to_maps)
         self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
@@ -66,6 +67,7 @@ class EnvLifelongMAPF:
         self.start_nodes = None
         self.first_goal_nodes = None
         self.iteration = None
+        self.start_time = None
 
         # for plotting
         self.middle_plot = kwargs['middle_plot']
@@ -80,6 +82,7 @@ class EnvLifelongMAPF:
 
     def reset(self, same_start):
         self.iteration = 0
+        self.start_time = time.time()
         first_run = same_start and self.start_nodes is None
         if first_run or not same_start:
             self.start_nodes = random.sample(self.nodes, self.n_agents)
@@ -103,6 +106,9 @@ class EnvLifelongMAPF:
         if self.classical_rhcr_mapf:
             if self.iteration >= self.rhcr_mapf_limit:
                 return True, 0
+            end_time = time.time() - self.start_time
+            if end_time >= self.global_time_limit:
+                return True, 0
             for agent in self.agents:
                 if not agent.reached_the_goal:
                     return False, 0
@@ -112,11 +118,14 @@ class EnvLifelongMAPF:
     def _process_single_shot(self, actions):
         to_continue = True
         observations, succeeded, termination, info = None, None, None, None
-        if 'one_shot' in actions:
+        if 'one_shot' in actions and actions['one_shot']:
             to_continue = False
+            succeeded = actions['succeeded']
+            if succeeded:
+                for agent in self.agents:
+                    agent.latest_arrival = actions['latest_arrivals'][agent.name]
             observations = self._get_observations([])
-            succeeded = True
-            succeeded, termination, info = {}, True, {}
+            termination, info = True, {}
         return to_continue, (observations, succeeded, termination, info)
 
     def step(self, actions):
@@ -127,10 +136,10 @@ class EnvLifelongMAPF:
         (3) a collision
         (4) no plan for any agent
         """
-        # to_continue, return_values = self._process_single_shot(actions)
-        # if not to_continue:
-        #     observations, succeeded, termination, info = return_values
-        #     return observations, succeeded, termination, info
+        to_continue, return_values = self._process_single_shot(actions)
+        if not to_continue:
+            observations, succeeded, termination, info = return_values
+            return observations, succeeded, termination, info
         self.iteration += 1
         self._execute_actions(actions)
         agents_names_with_new_goals = self._execute_event_new_goal()
@@ -145,7 +154,15 @@ class EnvLifelongMAPF:
             plot_magnet_agent_view(self.ax[1], info)
             plt.pause(self.plot_rate)
         n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in self.agents])
-        print(f"\n\n[{len(self.agents)}][{info['alg_name']}] PROBLEM: {info['i_problem'] + 1}/{info['n_problems']}, ITERATION: {info['i'] + 1}\n"
+        classical_mapf_str = ''
+        if self.classical_rhcr_mapf:
+            n_finished_agents = sum([agent.reached_the_goal for agent in self.agents])
+            time_passed = time.time() - self.start_time
+            classical_mapf_str = f'DONE: {n_finished_agents} / {len(self.agents)}, TIME: {time_passed: .2f}s., '
+        print(f"\n\n[{len(self.agents)}][{info['alg_name']}] "
+              f"PROBLEM: {info['i_problem'] + 1}/{info['n_problems']}, "
+              f"{classical_mapf_str}"
+              f"ITERATION: {info['i'] + 1}\n"
               f"Total closed goals --------------------------------> {n_closed_goals}\n"
               f"Total time --------------------------------> {info['runtime']: .2f}s\n")
 
