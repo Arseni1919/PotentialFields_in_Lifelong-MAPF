@@ -33,6 +33,16 @@ class SDSAgent(ParObsPFPrPAgent):
         prob_change = 0.9 - 0.8 * (my_order / (len(full_plans_len_list) - 1))
         return prob_change
 
+    def replan(self):
+        prob_change = self.get_prob_change()
+        if random.random() < prob_change:
+            h_agents = self.get_h_agents()
+            old_plan = self.plan
+            self.plan = None
+            self.build_plan(h_agents)
+            if not self.plan_succeeded:
+                self.plan = old_plan
+
     def get_h_agents(self):
         p_h, p_l = self.params['p_h'], self.params['p_l']
         h_agents = []
@@ -179,14 +189,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
             local_start_time = time.time()
 
             # EACH AGENT:
-            prob_change = agent.get_prob_change()
-            if random.random() < prob_change:
-                h_agents = agent.get_h_agents()
-                old_plan = agent.plan
-                agent.plan = None
-                agent.build_plan(h_agents)
-                if not agent.plan_succeeded:
-                    agent.plan = old_plan
+            agent.replan()
 
             # limit check
             passed_time = time.time() - local_start_time
@@ -204,8 +207,8 @@ def main():
     p_l = p_h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    alg_name = 'ParObs-SDS'
-    # alg_name = 'ParObs-PF-SDS'
+    # alg_name = 'ParObs-SDS'
+    alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
         'SDS': {
@@ -251,8 +254,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=10,
-        # middle_plot=True,
-        middle_plot=False,
+        middle_plot=True,
+        # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
