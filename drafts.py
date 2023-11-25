@@ -1,7 +1,9 @@
-thisset = {"apple", "banana", "cherry"}
+from globals import *
 
-thisset.add("orange")
-thisset.add("orange")
+a = np.array([1,2,3])
 
-print(thisset)
-print("orange" in thisset)
+b = a
+
+a = np.array([0,0,0])
+print(a)
+print(b)

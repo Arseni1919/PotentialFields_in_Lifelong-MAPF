@@ -37,7 +37,7 @@ class ParObsPFPrPAgent:
         self.map_dim = kwargs['map_dim']
         self.heuristic_value = None
         self.pf_field = None
-        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict = [], {}, {}, {}
+        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict = [], {}, {}, {}, {}
         self.nei_pfs = None
         self.h, self.w = set_h_and_w(self)
         self.pf_weight = set_pf_weight(self)
@@ -52,13 +52,14 @@ class ParObsPFPrPAgent:
         self.heuristic_value = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
 
     def clean_nei(self):
-        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict = [], {}, {}, {}
+        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict = [], {}, {}, {}, {}
 
     def add_nei(self, nei_agent):
         self.nei_list.append(nei_agent)
         self.nei_dict[nei_agent.name] = nei_agent
         self.nei_plans_dict[nei_agent.name] = nei_agent.plan
         self.nei_h_dict[nei_agent.name] = nei_agent.heuristic_value
+        self.nei_pf_dict[nei_agent.name] = None
 
     def build_plan(self, h_agents):
         # self._execute_a_star(h_agents)
@@ -78,6 +79,11 @@ class ParObsPFPrPAgent:
             self.pf_field = self.pf_field[:, :, 1:]
             self.correct_nei_pfs()
         return next_node.xy_name
+
+    def get_full_plan(self):
+        full_plan = [self.curr_node]
+        full_plan.extend(self.plan)
+        return full_plan
 
     def _get_weight(self, nei_heuristic_value):
 
@@ -184,9 +190,8 @@ class ParObsPFPrPAgent:
                 self.pf_field[i_node.x, i_node.y, i_time] += float(gradient_list[distance_index])
         # plot_magnet_field(self.magnet_field)
 
-    def _execute_a_star(self, h_agents):
+    def _create_constraints(self, h_agents):
         nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
-        # nei_h_agents_names = [a.name for a in nei_h_agents]
         sub_results = create_sub_results(nei_h_agents)
         v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
 
@@ -196,6 +201,11 @@ class ParObsPFPrPAgent:
         else:
             nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
             self.nei_pfs = nei_pfs
+
+        return v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem
+
+    def _execute_a_star(self, h_agents):
+        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = self._create_constraints(h_agents)
 
         new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=self.next_goal_node,
                                         nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func,
@@ -257,6 +267,76 @@ class AlgParObsPFPrPSeq:
 
         # limits
         self.time_to_think_limit = None
+
+    def first_init(self, env: EnvLifelongMAPF, **kwargs):
+        self.env = env
+        self.n_agents = env.n_agents
+        self.map_dim = env.map_dim
+        self.nodes, self.nodes_dict = env.nodes, env.nodes_dict
+        self.h_dict = env.h_dict
+        self.h_func = env.h_func
+
+        self.agents = None
+        self.agents_dict = {}
+        self.curr_iteration = None
+        self.agents_names_with_new_goals = []
+
+        # limits
+        self.time_to_think_limit = 1e6
+        if 'time_to_think_limit' in kwargs:
+            self.time_to_think_limit = kwargs['time_to_think_limit']
+
+    def reset(self):
+        self.agents: List[ParObsPFPrPAgent] = []
+        for env_agent in self.env.agents:
+            new_agent = ParObsPFPrPAgent(
+                num=env_agent.num, start_node=env_agent.start_node, next_goal_node=env_agent.next_goal_node,
+                nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func, h_dict=self.h_dict,
+                map_dim=self.map_dim, params=self.params
+            )
+            self.agents.append(new_agent)
+            self.agents_dict[new_agent.name] = new_agent
+            self.curr_iteration = 0
+
+    # @check_time_limit()
+    def get_actions(self, observations, **kwargs):
+        """
+        observations[agent.name] = {
+                'num': agent.num,
+                'curr_node': agent.curr_node,
+                'next_goal_node': agent.next_goal_node,
+            }
+        actions: {agent_name: node_name, ...}
+        """
+        self.curr_iteration = kwargs['iteration']
+
+        # update the current state
+        self.agents_names_with_new_goals = observations['agents_names_with_new_goals']
+        for agent in self.agents:
+            agent.update_obs(observations[agent.name], agents_dict=self.agents_dict)
+
+        # update neighbours - RHCR part
+        self._update_neighbours()
+
+        # build the plans - PF part
+        self._build_plans()
+
+        # choose the actions
+        actions = {agent.name: agent.choose_action() for agent in self.agents}
+        self._add_one_shot_to_actions(actions)
+
+        alg_info = {
+            'i_agent': self.agents_dict['agent_0'],
+            'i_nodes': self.nodes,
+            'alg_name': self.alg_name,
+            'time_to_think_limit': self.time_to_think_limit,
+        }
+
+        # checks
+        check_actions_if_vc(self.agents, actions)
+        check_actions_if_ec(self.agents, actions)
+
+        return actions, alg_info
 
     def _update_neighbours(self):
         _ = [agent.clean_nei() for agent in self.agents]
@@ -365,13 +445,7 @@ class AlgParObsPFPrPSeq:
         if need_to_shuffle:
             random.shuffle(self.agents)
 
-    def _build_plans_persist(self):
-        if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
-            return
-        start_time = time.time()
-        # self._update_order()
-        self._reshuffle_agents()
-
+    def initial_prp_assignment(self, start_time):
         # Persist
         h_agents = []
         for i, agent in enumerate(self.agents):
@@ -382,7 +456,20 @@ class AlgParObsPFPrPSeq:
             end_time = time.time() - start_time
             if end_time > self.time_to_think_limit:
                 self._cut_up_to_the_limit(i)
-                return
+                return True
+        return False
+
+    def _build_plans_persist(self):
+        if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
+            return
+        start_time = time.time()
+        # self._update_order()
+        self._reshuffle_agents()
+
+        # Persist
+        time_limit_crossed = self.initial_prp_assignment(start_time)
+        if time_limit_crossed:
+            return
 
         # IStay
         self._implement_istay()
@@ -404,76 +491,6 @@ class AlgParObsPFPrPSeq:
             self._build_plans_restart()
         else:
             self._build_plans_persist()
-
-    def first_init(self, env: EnvLifelongMAPF, **kwargs):
-        self.env = env
-        self.n_agents = env.n_agents
-        self.map_dim = env.map_dim
-        self.nodes, self.nodes_dict = env.nodes, env.nodes_dict
-        self.h_dict = env.h_dict
-        self.h_func = env.h_func
-
-        self.agents = None
-        self.agents_dict = {}
-        self.curr_iteration = None
-        self.agents_names_with_new_goals = []
-
-        # limits
-        self.time_to_think_limit = 1e6
-        if 'time_to_think_limit' in kwargs:
-            self.time_to_think_limit = kwargs['time_to_think_limit']
-
-    def reset(self):
-        self.agents: List[ParObsPFPrPAgent] = []
-        for env_agent in self.env.agents:
-            new_agent = ParObsPFPrPAgent(
-                num=env_agent.num, start_node=env_agent.start_node, next_goal_node=env_agent.next_goal_node,
-                nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func, h_dict=self.h_dict,
-                map_dim=self.map_dim, params=self.params
-            )
-            self.agents.append(new_agent)
-            self.agents_dict[new_agent.name] = new_agent
-            self.curr_iteration = 0
-
-    # @check_time_limit()
-    def get_actions(self, observations, **kwargs):
-        """
-        observations[agent.name] = {
-                'num': agent.num,
-                'curr_node': agent.curr_node,
-                'next_goal_node': agent.next_goal_node,
-            }
-        actions: {agent_name: node_name, ...}
-        """
-        self.curr_iteration = kwargs['iteration']
-
-        # update the current state
-        self.agents_names_with_new_goals = observations['agents_names_with_new_goals']
-        for agent in self.agents:
-            agent.update_obs(observations[agent.name], agents_dict=self.agents_dict)
-
-        # update neighbours - RHCR part
-        self._update_neighbours()
-
-        # build the plans - PF part
-        self._build_plans()
-
-        # choose the actions
-        actions = {agent.name: agent.choose_action() for agent in self.agents}
-        self._add_one_shot_to_actions(actions)
-
-        alg_info = {
-            'i_agent': self.agents_dict['agent_0'],
-            'i_nodes': self.nodes,
-            'alg_name': self.alg_name,
-            'time_to_think_limit': self.time_to_think_limit,
-        }
-
-        # checks
-        check_actions_if_vc(self.agents, actions)
-        check_actions_if_ec(self.agents, actions)
-
-        return actions, alg_info
 
 
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
@@ -504,9 +521,9 @@ def main():
         'ParObs-PF-PrP': {
             # For PF
             # 'pf_weight': 0.5,
-            # 'pf_weight': 1,
+            'pf_weight': 1,
             # 'pf_weight': 2,
-            'pf_weight': 3,
+            # 'pf_weight': 3,
             # 'pf_weight': 5,
             # 'pf_weight': 10,
             # 'pf_size': 'h',
@@ -543,7 +560,9 @@ def main():
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
+        global_time_limit=60,
         time_to_think_limit=10,  # seconds
+        rhcr_mapf_limit=10000,
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32

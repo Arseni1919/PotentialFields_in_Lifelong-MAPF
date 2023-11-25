@@ -14,6 +14,79 @@ from algs.alg_ParObs_PF_PrP_seq import ParObsPFPrPAgent, AlgParObsPFPrPSeq
 class SDSAgent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
+        self.a_names_in_conf_list = []
+
+    def get_prob_change(self):
+        if len(self.a_names_in_conf_list) == 0:
+            return 0
+        full_plans_len_list = []
+        for nei_name, nei_plan in self.nei_plans_dict.items():
+            if nei_name in self.a_names_in_conf_list:
+                full_plans_len_list.append(int(len(nei_plan) + self.nei_h_dict[nei_name]))
+
+        my_plan_len = int(len(self.plan) + self.heuristic_value)
+        if len(full_plans_len_list) == 1 and full_plans_len_list[0] == my_plan_len:
+            return 0.5
+        full_plans_len_list.append(my_plan_len)
+        full_plans_len_list.sort()
+        my_order = full_plans_len_list.index(my_plan_len)
+        prob_change = 0.9 - 0.8 * (my_order / (len(full_plans_len_list) - 1))
+        return prob_change
+
+    def get_h_agents(self):
+        p_h, p_l = self.params['p_h'], self.params['p_l']
+        h_agents = []
+        my_plan_len = len(self.plan) + self.heuristic_value
+        # path length + index
+        for nei_name, nei_plan in self.nei_plans_dict.items():
+            nei_agent = self.nei_dict[nei_name]
+            nei_heuristic_value = self.nei_h_dict[nei_name]
+            nei_plan_len = len(nei_plan) + nei_heuristic_value
+            if nei_name in self.a_names_in_conf_list:
+                h_agents.append(nei_agent)
+            elif my_plan_len > nei_plan_len:
+                if random.random() < p_l:
+                    h_agents.append(nei_agent)
+            elif my_plan_len < nei_plan_len:
+                if random.random() < p_h:
+                    h_agents.append(nei_agent)
+            elif self.num > nei_agent.num:
+                if random.random() < p_l:
+                    h_agents.append(nei_agent)
+            else:
+                if random.random() < p_h:
+                    h_agents.append(nei_agent)
+        return h_agents
+
+    def _create_constraints(self, h_agents):
+        sub_results = create_sds_sub_results(h_agents, self.nei_plans_dict)
+        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
+
+        # build nei-PFs
+        if self.pf_weight == 0:
+            self.nei_pfs = None
+        else:
+            nei_pfs, max_plan_len = self._build_nei_pfs(h_agents)
+            self.nei_pfs = nei_pfs
+
+        return v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem
+
+    # POTENTIAL FIELDS ****************************** pf_weight ******************************
+    def _build_nei_pfs(self, h_agents):
+        if len(h_agents) == 0:
+            return None, None
+        max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
+        nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
+        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
+        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        for nei_agent in h_agents:
+            nei_plan = self.nei_plans_dict[nei_agent.name]
+            nei_heuristic_value = self.nei_h_dict[nei_agent.name]
+            nei_pf = self.nei_pf_dict[nei_agent.name]
+            up_until_t = len(nei_plan)
+            weight = self._get_weight(nei_heuristic_value=nei_heuristic_value)
+            nei_pfs[:, :, :up_until_t] += weight * nei_pf
+        return nei_pfs, max_plan_len
 
 
 class AlgSDS(AlgParObsPFPrPSeq):
@@ -25,14 +98,9 @@ class AlgSDS(AlgParObsPFPrPSeq):
     """
     def __init__(self, params, alg_name):
         super().__init__(params, alg_name)
-        self.big_N = params['big_N']
-        self.conf_matrix = None
-        self.conf_agents_names_list = None
-        self.conf_vv_random_walk = None
-        self.conf_neighbourhood = None
 
     def reset(self):
-        self.agents: List[ParObsPFPrPAgent] = []
+        self.agents: List[SDSAgent] = []
         for env_agent in self.env.agents:
             new_agent = SDSAgent(
                 num=env_agent.num, start_node=env_agent.start_node, next_goal_node=env_agent.next_goal_node,
@@ -44,48 +112,130 @@ class AlgSDS(AlgParObsPFPrPSeq):
             self.curr_iteration = 0
 
     def _build_plans(self):
+        if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
+            return
+        distr_time = 0
+
         # init path
-        pass
+        time_limit_crossed, distr_time = self._all_initial_sds_assignment(distr_time)
+        # if time_limit_crossed:
+        #     return
 
         # while there are conflicts
-        while True:
+        there_are_collisions = True
+        while there_are_collisions:
             # exchange with neighbours
-            pass
+            there_are_collisions, distr_time = self._all_exchange_plans(distr_time)
+
+            if not there_are_collisions:
+                break
 
             # replan
-            pass
+            time_limit_crossed, distr_time = self._all_replan(distr_time)
+            # if time_limit_crossed:
+            #     return
+
+    def _all_initial_sds_assignment(self, distr_time):
+        parallel_times = []
+        for i, agent in enumerate(self.agents):
+            local_start_time = time.time()
+            agent.build_plan([])
+
+            # limit check
+            passed_time = time.time() - local_start_time
+            parallel_times.append(passed_time)
+            if distr_time + passed_time > self.time_to_think_limit:
+                self._cut_up_to_the_limit(i)
+                return True, distr_time + max(parallel_times)
+        return False, distr_time + max(parallel_times)
+
+    def _all_exchange_plans(self, distr_time):
+        for agent in self.agents:
+            agent.a_names_in_conf_list = []
+            agent.nei_plans_dict = {nei.name: nei.plan for nei in agent.nei_list}
+            agent.nei_h_dict = {nei.name: nei.heuristic_value for nei in agent.nei_list}
+            agent.nei_pf_dict = {nei.name: nei.pf_field for nei in agent.nei_list}
+
+        there_are_collisions, n_collisions = False, 0
+        for agent1, agent2 in combinations(self.agents, 2):
+            if agent1.name not in agent2.nei_dict:
+                continue
+            plan1 = agent1.get_full_plan()
+            plan2 = agent2.get_full_plan()
+            if not two_plans_have_no_confs(plan1, plan2):
+                there_are_collisions = True
+                agent1.a_names_in_conf_list.append(agent2.name)
+                agent2.a_names_in_conf_list.append(agent1.name)
+                n_collisions += 1
+                # return there_are_collisions, distr_time
+        # if there_are_collisions:
+        #     print(f'\nT[SDS] There are {n_collisions} collisions')
+        return there_are_collisions, distr_time
+
+    def _all_replan(self, distr_time):
+        parallel_times = []
+        for i, agent in enumerate(self.agents):
+
+            local_start_time = time.time()
+
+            # EACH AGENT:
+            prob_change = agent.get_prob_change()
+            if random.random() < prob_change:
+                h_agents = agent.get_h_agents()
+                old_plan = agent.plan
+                agent.plan = None
+                agent.build_plan(h_agents)
+                if not agent.plan_succeeded:
+                    agent.plan = old_plan
+
+            # limit check
+            passed_time = time.time() - local_start_time
+            parallel_times.append(passed_time)
+            if distr_time + passed_time > self.time_to_think_limit:
+                self._cut_up_to_the_limit(i)
+                return True, distr_time + max(parallel_times)
+        return False, distr_time + max(parallel_times)
 
 
 @use_profiler(save_dir='../stats/alg_sds.pstat')
 def main():
     # Alg params
-    big_N = 5
-    # alg_name = 'LNS2'
-    # alg_name = 'PF-LNS2'
-    # alg_name = 'ParObs-LNS2'
-    alg_name = 'ParObs-PF-LNS2'
+    p_h = 0.95
+    p_l = p_h
+    # alg_name = 'SDS'
+    # alg_name = 'PF-SDS'
+    alg_name = 'ParObs-SDS'
+    # alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
-        'SDS': {},
+        'SDS': {
+            'p_h': p_h,
+            'p_l': p_l,
+        },
         'PF-SDS': {
             # For PF
             'pf_weight': 0.5,
             'pf_size': 3,
             'pf_shape': 2,
+            'p_h': p_h,
+            'p_l': p_l,
         },
         'ParObs-SDS': {
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
+            'p_h': p_h,
+            'p_l': p_l,
         },
         'ParObs-PF-SDS': {
             # For PF
-            'pf_weight': 0.5,
-            'pf_size': 3,
-            'pf_shape': 2,
+            'pf_weight': 1,
+            'pf_size': 4,
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
+            'p_h': p_h,
+            'p_l': p_l,
         },
     }
 
@@ -100,21 +250,25 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=50,
-        middle_plot=True,
-        # middle_plot=False,
+        PLOT_FROM=10,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        iterations=200,  # !!!
-        # iterations=100,
-        n_agents=250,
+        # iterations=200,  # !!!
+        iterations=100,
+        n_agents=350,
         n_problems=1,
+        classical_rhcr_mapf=False,
+        time_to_think_limit=30,
+        rhcr_mapf_limit=10000,
+        global_time_limit=60,
 
         # Map
-        img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='empty-32-32.map',  # 32-32
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32

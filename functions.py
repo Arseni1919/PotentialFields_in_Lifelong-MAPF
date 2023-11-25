@@ -155,6 +155,18 @@ def create_sub_results(h_agents):
     return sub_results
 
 
+def create_sds_sub_results(h_agents, nei_plans_dict):
+    # sub results
+    sub_results = {}
+    for agent in h_agents:
+        # h_plan = agent.plan
+        h_plan = [agent.curr_node]
+        h_plan.extend(nei_plans_dict[agent.name])
+        sub_results[agent.name] = h_plan
+    # sub_results = {agent.name: agent.plan for agent in h_agents}
+    return sub_results
+
+
 def build_constraints(nodes, other_paths):
     v_constr_dict = {node.xy_name: [] for node in nodes}
     e_constr_dict = {node.xy_name: [] for node in nodes}

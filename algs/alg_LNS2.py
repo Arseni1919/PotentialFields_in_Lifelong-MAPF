@@ -102,8 +102,6 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return
-        # if self.h is None and len(self.agents_names_with_new_goals) == 0:
-        #     return
         """
         LNS2:
         - build PrP
@@ -125,17 +123,9 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
         # self._update_order()
         self._reshuffle_agents()
 
-        h_agents = []
-        # need_to_shuffle = False
-        for i, agent in enumerate(self.agents):
-            agent.build_plan(h_agents)
-            h_agents.append(agent)
-
-            # limit check
-            end_time = time.time() - start_time
-            if end_time > self.time_to_think_limit:
-                self._cut_up_to_the_limit(i)
-                return
+        time_limit_crossed = self.initial_prp_assignment(start_time)
+        if time_limit_crossed:
+            return
 
         while (num_of_confs := self._build_G_c()) > 0:
             V_v, v = self._select_random_conf_v()
@@ -162,8 +152,8 @@ def main():
     big_N = 5
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
-    # alg_name = 'ParObs-LNS2'
-    alg_name = 'ParObs-PF-LNS2'
+    alg_name = 'ParObs-LNS2'
+    # alg_name = 'ParObs-PF-LNS2'
 
     params_dict = {
         'LNS2': {'big_N': big_N},
@@ -190,10 +180,6 @@ def main():
             # For PF
             # 'pf_weight': 0.5,
             'pf_weight': 1,
-            # 'pf_weight': 3,
-            # 'pf_weight': 5,
-            # 'pf_weight': 10,
-            # 'pf_size': 'h',
             'pf_size': 4,
             # 'pf_size': 5,
             # 'pf_size': 2,
@@ -214,21 +200,23 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=45,
-        middle_plot=True,
-        # middle_plot=False,
+        PLOT_FROM=10,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        iterations=50,  # !!!
-        # iterations=100,
-        n_agents=250,
+        # iterations=50,  # !!!
+        # iterations=200,
+        iterations=100,
+        n_agents=350,
         n_problems=1,
-        classical_rhcr_mapf=True,
-        # classical_rhcr_mapf=False,
+        # classical_rhcr_mapf=True,
+        classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=1000,
+        global_time_limit=60,
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
