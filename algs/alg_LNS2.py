@@ -154,8 +154,8 @@ def main():
     pf_size = 4
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
-    # alg_name = 'ParObs-LNS2'
-    alg_name = 'ParObs-PF-LNS2'
+    alg_name = 'ParObs-LNS2'
+    # alg_name = 'ParObs-PF-LNS2'
 
     params_dict = {
         'LNS2': {'big_N': big_N},
@@ -200,8 +200,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=50,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -209,7 +209,7 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=400,
+        n_agents=600,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,

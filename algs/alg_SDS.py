@@ -17,6 +17,8 @@ class SDSAgent(ParObsPFPrPAgent):
         self.a_names_in_conf_list = []
 
     def secondary_sds_init_plan(self):
+        if self.pf_weight == 0:
+            return self.plan
         # self._execute_a_star(h_agents)
         v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, {})
         nei_pfs, max_plan_len = self._build_nei_pfs(self.nei_list)
@@ -150,6 +152,28 @@ class AlgSDS(AlgParObsPFPrPSeq):
             self.agents_dict[new_agent.name] = new_agent
             self.curr_iteration = 0
 
+    def _sds_shuffle(self):
+        # random.shuffle(self.agents)
+
+        # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
+
+        stuck_agents, other_agents = [], []
+        # going_agents = []
+        for agent in self.agents:
+            if not agent.plan_succeeded:
+                stuck_agents.append(agent)
+                continue
+            # if agent.heuristic_value > 0:
+            #     going_agents.append(agent)
+            #     continue
+            other_agents.append(agent)
+        random.shuffle(stuck_agents)
+        # random.shuffle(going_agents)
+        random.shuffle(other_agents)
+        # stuck_agents.extend(going_agents)
+        stuck_agents.extend(other_agents)
+        self.agents = stuck_agents
+
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return
@@ -166,25 +190,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
         if time_limit_crossed:
             return
 
-        random.shuffle(self.agents)
-
-        # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
-        # stuck_agents, going_agents, other_agents = [], [], []
-        # for agent in self.agents:
-        #     if not agent.plan_succeeded:
-        #         stuck_agents.append(agent)
-        #         continue
-        #     if agent.heuristic_value > 0:
-        #         going_agents.append(agent)
-        #         continue
-        #     other_agents.append(agent)
-        # random.shuffle(stuck_agents)
-        # random.shuffle(going_agents)
-        # random.shuffle(other_agents)
-        # stuck_agents.extend(going_agents)
-        # stuck_agents.extend(other_agents)
-        # self.agents = stuck_agents
-
+        self._sds_shuffle()
         self.nums_order_list = [a.num for a in self.agents]
 
         # while there are conflicts
@@ -292,8 +298,8 @@ def main():
     pf_size = 4
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    # alg_name = 'ParObs-SDS'
-    alg_name = 'ParObs-PF-SDS'
+    alg_name = 'ParObs-SDS'
+    # alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
         'SDS': {
@@ -339,15 +345,15 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=50,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
         # iterations=200,  # !!!
         iterations=100,
-        n_agents=400,
+        n_agents=600,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
