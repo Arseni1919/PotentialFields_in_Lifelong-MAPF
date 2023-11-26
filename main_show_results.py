@@ -21,8 +21,14 @@ def show_results(**kwargs):
 
 
 def main():
-    file_dir = '2023-11-24--16-29_ALGS-4_RUNS-15_MAP-empty-32-32.json'
-    show_results(file_dir=f'logs_for_plots/{file_dir}')
+    # file_dir = '2023-11-24--16-29_ALGS-4_RUNS-15_MAP-empty-32-32.json'
+    # show_results(file_dir=f'logs_for_plots/{file_dir}')
+
+    # file_dir = '2023-11-25--01-08_ALGS-4_RUNS-15_MAP-empty-32-32.json'
+    # file_dir = '2023-11-25--12-22_ALGS-4_RUNS-15_MAP-random-32-32-10.json'
+    # file_dir = '2023-11-26--00-02_ALGS-4_RUNS-15_MAP-room-32-32-4.json'
+    file_dir = '2023-11-26--12-37_ALGS-4_RUNS-15_MAP-maze-32-32-2.json'
+    show_results(file_dir=f'final_logs/{file_dir}')
 
 
 if __name__ == '__main__':
