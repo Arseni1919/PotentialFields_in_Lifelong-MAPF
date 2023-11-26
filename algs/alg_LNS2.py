@@ -150,12 +150,14 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 def main():
     # Alg params
     big_N = 5
+    h = 5
+    w = h
     pf_weight = 1
-    pf_size = 4
+    pf_size = 2
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
-    alg_name = 'ParObs-LNS2'
-    # alg_name = 'ParObs-PF-LNS2'
+    # alg_name = 'ParObs-LNS2'
+    alg_name = 'ParObs-PF-LNS2'
 
     params_dict = {
         'LNS2': {'big_N': big_N},
@@ -179,12 +181,7 @@ def main():
         },
         'ParObs-PF-LNS2': {
             'big_N': big_N,
-            # For PF
-            'pf_weight': pf_weight,
-            'pf_size': pf_size,
-            # For RHCR
-            'h': 5,  # my step
-            'w': 5,  # my planning
+            'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size
         },
     }
 
@@ -209,7 +206,7 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=300,
+        n_agents=600,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,

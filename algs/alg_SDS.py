@@ -19,56 +19,21 @@ class SDSAgent(ParObsPFPrPAgent):
     def secondary_sds_init_plan(self):
         if self.pf_weight == 0:
             return self.plan
-        # self._execute_a_star(h_agents)
         v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, {})
         nei_pfs, max_plan_len = self._build_nei_pfs(self.nei_list)
         self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
         return self.plan
 
     def replan(self, nums_order_list):
-        # prob_change = self._replan_get_prob_change(nums_order_list=nums_order_list)
-        # if random.random() < prob_change:
         if len(self.a_names_in_conf_list) != 0:
             h_agents = self._replan_get_h_agents(nums_order_list=nums_order_list)
             # old_plan = self.plan
             self.plan = None
             self.build_plan(h_agents)
-            # if not self.plan_succeeded:
-            #     self.plan = old_plan
-
-    # def _replan_get_prob_change(self, nums_order_list):
-    #     if len(self.a_names_in_conf_list) == 0:
-    #         return 0
-    #     return 1
-    #
-    #     # for conf_name in self.a_names_in_conf_list:
-    #     #     conf_agent = self.nei_dict[conf_name]
-    #     #     if nums_order_list.index(conf_agent.num) < nums_order_list.index(self.num):
-    #     #         return 1
-    #     #     elif not self.nei_succ_dict[conf_name]:
-    #     #         return 1
-    #     # return 0
-    #
-    #     # conf_plans_len_list = []
-    #     # for nei_name, nei_plan in self.nei_plans_dict.items():
-    #     #     # if nums_order_list.index(self.num) > nums_order_list.index(agent.num):
-    #     #     #     pass
-    #     #     if nei_name in self.a_names_in_conf_list:
-    #     #         conf_plans_len_list.append(int(self.nei_h_dict[nei_name]))
-    #     #         # conf_plans_len_list.append(int(len(nei_plan) + self.nei_h_dict[nei_name]))
-    #     # max_v = max(conf_plans_len_list)
-    #     # min_v = min(conf_plans_len_list)
-    #     # my_plan_len = int(self.heuristic_value)
-    #     # if my_plan_len > max_v:
-    #     #     return 0.1
-    #     # if my_plan_len < min_v:
-    #     #     return 0.9
-    #     # return 0.5
 
     def _replan_get_h_agents(self, nums_order_list):
         # h_agents = [self.nei_dict[conf_name] for conf_name in self.a_names_in_conf_list]
         h_agents = []
-        # p_h, p_l = self.params['p_h'], self.params['p_l']
         for nei in self.nei_list:
 
             # h_agents.append(nei)
@@ -80,11 +45,6 @@ class SDSAgent(ParObsPFPrPAgent):
                     h_agents.append(nei)
             else:
                 h_agents.append(nei)
-
-                # if random.random() < p_h:
-                #     h_agents.append(nei)
-                # if nums_order_list.index(self.num) > nums_order_list.index(nei.num):
-                #     h_agents.append(nei)
 
         return h_agents
 
@@ -114,8 +74,6 @@ class SDSAgent(ParObsPFPrPAgent):
             return None, None
         max_plan_len = max([len(plan) for plan in self.nei_plans_dict.values()])
         nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
-        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
-        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
         for nei_agent in self.nei_list:
 
             nei_plan = self.nei_plans_dict[nei_agent.name]
@@ -155,24 +113,25 @@ class AlgSDS(AlgParObsPFPrPSeq):
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
 
-        # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
-
-        stuck_agents, other_agents = [], []
-        # going_agents = []
-        for agent in self.agents:
-            if not agent.plan_succeeded:
-                stuck_agents.append(agent)
-                continue
-            # if agent.heuristic_value > 0:
-            #     going_agents.append(agent)
-            #     continue
-            other_agents.append(agent)
-        random.shuffle(stuck_agents)
-        # random.shuffle(going_agents)
-        random.shuffle(other_agents)
-        # stuck_agents.extend(going_agents)
-        stuck_agents.extend(other_agents)
-        self.agents = stuck_agents
+        if random.random() < 0.9:
+            self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
+        else:
+            stuck_agents, other_agents = [], []
+            # going_agents = []
+            for agent in self.agents:
+                if not agent.plan_succeeded:
+                    stuck_agents.append(agent)
+                    continue
+                # if agent.heuristic_value > 0:
+                #     going_agents.append(agent)
+                #     continue
+                other_agents.append(agent)
+            random.shuffle(stuck_agents)
+            # random.shuffle(going_agents)
+            random.shuffle(other_agents)
+            # stuck_agents.extend(going_agents)
+            stuck_agents.extend(other_agents)
+            self.agents = stuck_agents
 
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
@@ -292,45 +251,20 @@ class AlgSDS(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_sds.pstat')
 def main():
     # Alg params
-    p_h = 0.95
-    p_l = p_h
     pf_weight = 1
     pf_size = 4
+    h = 5
+    w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    alg_name = 'ParObs-SDS'
-    # alg_name = 'ParObs-PF-SDS'
+    # alg_name = 'ParObs-SDS'
+    alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
-        'SDS': {
-            'p_h': p_h,
-            'p_l': p_l,
-        },
-        'PF-SDS': {
-            # For PF
-            'pf_weight': 0.5,
-            'pf_size': 3,
-            'pf_shape': 2,
-            'p_h': p_h,
-            'p_l': p_l,
-        },
-        'ParObs-SDS': {
-            # For RHCR
-            'h': 5,  # my step
-            'w': 5,  # my planning
-            'p_h': p_h,
-            'p_l': p_l,
-        },
-        'ParObs-PF-SDS': {
-            # For PF
-            'pf_weight': pf_weight,
-            'pf_size': pf_size,
-            # For RHCR
-            'h': 5,  # my step
-            'w': 5,  # my planning
-            'p_h': p_h,
-            'p_l': p_l,
-        },
+        'SDS': {},
+        'PF-SDS': {'pf_weight': pf_weight, 'pf_size': pf_size},
+        'ParObs-SDS': {'h': h, 'w': w},
+        'ParObs-PF-SDS': {'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size},
     }
 
     alg = AlgSDS(params=params_dict[alg_name], alg_name=alg_name)
@@ -344,7 +278,7 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=50,
+        PLOT_FROM=1,
         # middle_plot=True,
         middle_plot=False,
         final_plot=True,

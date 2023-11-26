@@ -263,6 +263,7 @@ def plot_env_field(ax, info):
 
     field = img_np * -1
     color_map = plt.cm.get_cmap('hsv', n_agents)
+    others_y_list, others_x_list, others_cm_list = [], [], []
     for i, agent_name in enumerate(agents_names):
         curr_node = info[agent_name]['curr_node']
         if agent_name == a_name:
@@ -272,8 +273,13 @@ def plot_env_field(ax, info):
             ax.scatter(next_goal_node.y, next_goal_node.x, s=200, c='white', marker='X')
             ax.scatter(next_goal_node.y, next_goal_node.x, s=100, c='red', marker='X')
         else:
-            ax.scatter(curr_node.y, curr_node.x, s=100, c='k')
-            ax.scatter(curr_node.y, curr_node.x, s=50, c=np.array([color_map(i)]))
+            others_y_list.append(curr_node.y)
+            others_x_list.append(curr_node.x)
+            others_cm_list.append(color_map(i))
+            # ax.scatter(curr_node.y, curr_node.x, s=100, c='k')
+            # ax.scatter(curr_node.y, curr_node.x, s=50, c=np.array([color_map(i)]))
+    ax.scatter(others_y_list, others_x_list, s=100, c='k')
+    ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
 
     ax.imshow(field, origin='lower')
     ax.set_title(f'Map: {img_dir[:-4]}\n '
