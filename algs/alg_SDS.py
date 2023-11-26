@@ -34,34 +34,34 @@ class SDSAgent(ParObsPFPrPAgent):
             # if not self.plan_succeeded:
             #     self.plan = old_plan
 
-    def _replan_get_prob_change(self, nums_order_list):
-        if len(self.a_names_in_conf_list) == 0:
-            return 0
-        return 1
-
-        # for conf_name in self.a_names_in_conf_list:
-        #     conf_agent = self.nei_dict[conf_name]
-        #     if nums_order_list.index(conf_agent.num) < nums_order_list.index(self.num):
-        #         return 1
-        #     elif not self.nei_succ_dict[conf_name]:
-        #         return 1
-        # return 0
-
-        # conf_plans_len_list = []
-        # for nei_name, nei_plan in self.nei_plans_dict.items():
-        #     # if nums_order_list.index(self.num) > nums_order_list.index(agent.num):
-        #     #     pass
-        #     if nei_name in self.a_names_in_conf_list:
-        #         conf_plans_len_list.append(int(self.nei_h_dict[nei_name]))
-        #         # conf_plans_len_list.append(int(len(nei_plan) + self.nei_h_dict[nei_name]))
-        # max_v = max(conf_plans_len_list)
-        # min_v = min(conf_plans_len_list)
-        # my_plan_len = int(self.heuristic_value)
-        # if my_plan_len > max_v:
-        #     return 0.1
-        # if my_plan_len < min_v:
-        #     return 0.9
-        # return 0.5
+    # def _replan_get_prob_change(self, nums_order_list):
+    #     if len(self.a_names_in_conf_list) == 0:
+    #         return 0
+    #     return 1
+    #
+    #     # for conf_name in self.a_names_in_conf_list:
+    #     #     conf_agent = self.nei_dict[conf_name]
+    #     #     if nums_order_list.index(conf_agent.num) < nums_order_list.index(self.num):
+    #     #         return 1
+    #     #     elif not self.nei_succ_dict[conf_name]:
+    #     #         return 1
+    #     # return 0
+    #
+    #     # conf_plans_len_list = []
+    #     # for nei_name, nei_plan in self.nei_plans_dict.items():
+    #     #     # if nums_order_list.index(self.num) > nums_order_list.index(agent.num):
+    #     #     #     pass
+    #     #     if nei_name in self.a_names_in_conf_list:
+    #     #         conf_plans_len_list.append(int(self.nei_h_dict[nei_name]))
+    #     #         # conf_plans_len_list.append(int(len(nei_plan) + self.nei_h_dict[nei_name]))
+    #     # max_v = max(conf_plans_len_list)
+    #     # min_v = min(conf_plans_len_list)
+    #     # my_plan_len = int(self.heuristic_value)
+    #     # if my_plan_len > max_v:
+    #     #     return 0.1
+    #     # if my_plan_len < min_v:
+    #     #     return 0.9
+    #     # return 0.5
 
     def _replan_get_h_agents(self, nums_order_list):
         # h_agents = [self.nei_dict[conf_name] for conf_name in self.a_names_in_conf_list]
