@@ -16,86 +16,114 @@ class SDSAgent(ParObsPFPrPAgent):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
 
-    def get_prob_change(self):
-        if len(self.a_names_in_conf_list) == 0:
-            return 0
-        full_plans_len_list = []
-        for nei_name, nei_plan in self.nei_plans_dict.items():
-            if nei_name in self.a_names_in_conf_list:
-                full_plans_len_list.append(int(len(nei_plan) + self.nei_h_dict[nei_name]))
+    def secondary_sds_init_plan(self):
+        # self._execute_a_star(h_agents)
+        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, {})
+        nei_pfs, max_plan_len = self._build_nei_pfs(self.nei_list)
+        self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
+        return self.plan
 
-        my_plan_len = int(len(self.plan) + self.heuristic_value)
-        if len(full_plans_len_list) == 1 and full_plans_len_list[0] == my_plan_len:
-            return 0.5
-        full_plans_len_list.append(my_plan_len)
-        full_plans_len_list.sort()
-        my_order = full_plans_len_list.index(my_plan_len)
-        prob_change = 0.9 - 0.8 * (my_order / (len(full_plans_len_list) - 1))
-        return prob_change
-
-    def replan(self):
-        prob_change = self.get_prob_change()
-        if random.random() < prob_change:
-            h_agents = self.get_h_agents()
-            old_plan = self.plan
+    def replan(self, nums_order_list):
+        # prob_change = self._replan_get_prob_change(nums_order_list=nums_order_list)
+        # if random.random() < prob_change:
+        if len(self.a_names_in_conf_list) != 0:
+            h_agents = self._replan_get_h_agents(nums_order_list=nums_order_list)
+            # old_plan = self.plan
             self.plan = None
             self.build_plan(h_agents)
-            if not self.plan_succeeded:
-                self.plan = old_plan
+            # if not self.plan_succeeded:
+            #     self.plan = old_plan
 
-    def get_h_agents(self):
-        p_h, p_l = self.params['p_h'], self.params['p_l']
+    def _replan_get_prob_change(self, nums_order_list):
+        if len(self.a_names_in_conf_list) == 0:
+            return 0
+        return 1
+
+        # for conf_name in self.a_names_in_conf_list:
+        #     conf_agent = self.nei_dict[conf_name]
+        #     if nums_order_list.index(conf_agent.num) < nums_order_list.index(self.num):
+        #         return 1
+        #     elif not self.nei_succ_dict[conf_name]:
+        #         return 1
+        # return 0
+
+        # conf_plans_len_list = []
+        # for nei_name, nei_plan in self.nei_plans_dict.items():
+        #     # if nums_order_list.index(self.num) > nums_order_list.index(agent.num):
+        #     #     pass
+        #     if nei_name in self.a_names_in_conf_list:
+        #         conf_plans_len_list.append(int(self.nei_h_dict[nei_name]))
+        #         # conf_plans_len_list.append(int(len(nei_plan) + self.nei_h_dict[nei_name]))
+        # max_v = max(conf_plans_len_list)
+        # min_v = min(conf_plans_len_list)
+        # my_plan_len = int(self.heuristic_value)
+        # if my_plan_len > max_v:
+        #     return 0.1
+        # if my_plan_len < min_v:
+        #     return 0.9
+        # return 0.5
+
+    def _replan_get_h_agents(self, nums_order_list):
+        # h_agents = [self.nei_dict[conf_name] for conf_name in self.a_names_in_conf_list]
         h_agents = []
-        my_plan_len = len(self.plan) + self.heuristic_value
-        # path length + index
-        for nei_name, nei_plan in self.nei_plans_dict.items():
-            nei_agent = self.nei_dict[nei_name]
-            nei_heuristic_value = self.nei_h_dict[nei_name]
-            nei_plan_len = len(nei_plan) + nei_heuristic_value
-            if nei_name in self.a_names_in_conf_list:
-                h_agents.append(nei_agent)
-            elif my_plan_len > nei_plan_len:
-                if random.random() < p_l:
-                    h_agents.append(nei_agent)
-            elif my_plan_len < nei_plan_len:
-                if random.random() < p_h:
-                    h_agents.append(nei_agent)
-            elif self.num > nei_agent.num:
-                if random.random() < p_l:
-                    h_agents.append(nei_agent)
+        # p_h, p_l = self.params['p_h'], self.params['p_l']
+        for nei in self.nei_list:
+
+            # h_agents.append(nei)
+
+            if nei.name in self.a_names_in_conf_list:
+                if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
+                    h_agents.append(nei)
+                elif not self.nei_succ_dict[nei.name]:
+                    h_agents.append(nei)
             else:
-                if random.random() < p_h:
-                    h_agents.append(nei_agent)
+                h_agents.append(nei)
+
+                # if random.random() < p_h:
+                #     h_agents.append(nei)
+                # if nums_order_list.index(self.num) > nums_order_list.index(nei.num):
+                #     h_agents.append(nei)
+
         return h_agents
 
-    def _create_constraints(self, h_agents):
-        sub_results = create_sds_sub_results(h_agents, self.nei_plans_dict)
-        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
-
-        # build nei-PFs
+    # # POTENTIAL FIELDS ****************************** pf_weight ******************************
+    def _build_nei_pfs(self, h_agents):
         if self.pf_weight == 0:
             self.nei_pfs = None
-        else:
-            nei_pfs, max_plan_len = self._build_nei_pfs(h_agents)
-            self.nei_pfs = nei_pfs
-
-        return v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem
-
-    # POTENTIAL FIELDS ****************************** pf_weight ******************************
-    def _build_nei_pfs(self, h_agents):
+            return None, None
         if len(h_agents) == 0:
             return None, None
         max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
         nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
-        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
-        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
         for nei_agent in h_agents:
+
             nei_plan = self.nei_plans_dict[nei_agent.name]
             nei_heuristic_value = self.nei_h_dict[nei_agent.name]
             nei_pf = self.nei_pf_dict[nei_agent.name]
+
             up_until_t = len(nei_plan)
             weight = self._get_weight(nei_heuristic_value=nei_heuristic_value)
             nei_pfs[:, :, :up_until_t] += weight * nei_pf
+        self.nei_pfs = nei_pfs
+        return nei_pfs, max_plan_len
+
+    def collect_all_nei_pfs(self):
+        if len(self.nei_list) == 0:
+            return None, None
+        max_plan_len = max([len(plan) for plan in self.nei_plans_dict.values()])
+        nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
+        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
+        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        for nei_agent in self.nei_list:
+
+            nei_plan = self.nei_plans_dict[nei_agent.name]
+            nei_heuristic_value = self.nei_h_dict[nei_agent.name]
+            nei_pf = self.nei_pf_dict[nei_agent.name]
+
+            up_until_t = len(nei_plan)
+            weight = self._get_weight(nei_heuristic_value=nei_heuristic_value)
+            nei_pfs[:, :, :up_until_t] += weight * nei_pf
+
         return nei_pfs, max_plan_len
 
 
@@ -108,6 +136,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
     """
     def __init__(self, params, alg_name):
         super().__init__(params, alg_name)
+        self.nums_order_list = None
 
     def reset(self):
         self.agents: List[SDSAgent] = []
@@ -128,27 +157,59 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
         # init path
         time_limit_crossed, distr_time = self._all_initial_sds_assignment(distr_time)
-        # if time_limit_crossed:
-        #     return
+        if time_limit_crossed:
+            return
+
+        self._all_exchange_plans()
+
+        time_limit_crossed, distr_time = self._all_secondary_sds_assignment(distr_time)
+        if time_limit_crossed:
+            return
+
+        random.shuffle(self.agents)
+
+        # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
+        # stuck_agents, going_agents, other_agents = [], [], []
+        # for agent in self.agents:
+        #     if not agent.plan_succeeded:
+        #         stuck_agents.append(agent)
+        #         continue
+        #     if agent.heuristic_value > 0:
+        #         going_agents.append(agent)
+        #         continue
+        #     other_agents.append(agent)
+        # random.shuffle(stuck_agents)
+        # random.shuffle(going_agents)
+        # random.shuffle(other_agents)
+        # stuck_agents.extend(going_agents)
+        # stuck_agents.extend(other_agents)
+        # self.agents = stuck_agents
+
+        self.nums_order_list = [a.num for a in self.agents]
 
         # while there are conflicts
         there_are_collisions = True
         while there_are_collisions:
-            # exchange with neighbours
-            there_are_collisions, distr_time = self._all_exchange_plans(distr_time)
 
+            # exchange with neighbours
+            self._all_exchange_plans()
+
+            # find collisions
+            there_are_collisions, distr_time = self._all_find_conf_agents(distr_time)
             if not there_are_collisions:
                 break
 
             # replan
             time_limit_crossed, distr_time = self._all_replan(distr_time)
-            # if time_limit_crossed:
-            #     return
+            if time_limit_crossed:
+                return
 
     def _all_initial_sds_assignment(self, distr_time):
-        parallel_times = []
+        parallel_times = [0]
         for i, agent in enumerate(self.agents):
+
             local_start_time = time.time()
+
             agent.build_plan([])
 
             # limit check
@@ -157,15 +218,28 @@ class AlgSDS(AlgParObsPFPrPSeq):
             if distr_time + passed_time > self.time_to_think_limit:
                 self._cut_up_to_the_limit(i)
                 return True, distr_time + max(parallel_times)
+
         return False, distr_time + max(parallel_times)
 
-    def _all_exchange_plans(self, distr_time):
-        for agent in self.agents:
-            agent.a_names_in_conf_list = []
-            agent.nei_plans_dict = {nei.name: nei.plan for nei in agent.nei_list}
-            agent.nei_h_dict = {nei.name: nei.heuristic_value for nei in agent.nei_list}
-            agent.nei_pf_dict = {nei.name: nei.pf_field for nei in agent.nei_list}
+    def _all_secondary_sds_assignment(self, distr_time):
+        parallel_times = [0]
+        for i, agent in enumerate(self.agents):
 
+            local_start_time = time.time()
+
+            agent.secondary_sds_init_plan()
+
+            # limit check
+            passed_time = time.time() - local_start_time
+            parallel_times.append(passed_time)
+            if distr_time + passed_time > self.time_to_think_limit:
+                self._cut_up_to_the_limit(i)
+                return True, distr_time + max(parallel_times)
+
+        return False, distr_time + max(parallel_times)
+
+    def _all_find_conf_agents(self, distr_time):
+        print()
         there_are_collisions, n_collisions = False, 0
         for agent1, agent2 in combinations(self.agents, 2):
             if agent1.name not in agent2.nei_dict:
@@ -177,19 +251,27 @@ class AlgSDS(AlgParObsPFPrPSeq):
                 agent1.a_names_in_conf_list.append(agent2.name)
                 agent2.a_names_in_conf_list.append(agent1.name)
                 n_collisions += 1
+                # print(f'>>>> {agent1.name}-{agent2.name}')
                 # return there_are_collisions, distr_time
-        # if there_are_collisions:
-        #     print(f'\nT[SDS] There are {n_collisions} collisions')
+        print(f'\n>>>> {n_collisions} collisions')
         return there_are_collisions, distr_time
 
+    def _all_exchange_plans(self):
+        for agent in self.agents:
+            agent.a_names_in_conf_list = []
+            agent.nei_plans_dict = {nei.name: nei.plan for nei in agent.nei_list}
+            agent.nei_h_dict = {nei.name: nei.heuristic_value for nei in agent.nei_list}
+            agent.nei_pf_dict = {nei.name: nei.pf_field for nei in agent.nei_list}
+            agent.nei_succ_dict = {nei.name: nei.plan_succeeded for nei in agent.nei_list}
+
     def _all_replan(self, distr_time):
-        parallel_times = []
+        parallel_times = [0]
         for i, agent in enumerate(self.agents):
 
             local_start_time = time.time()
 
             # EACH AGENT:
-            agent.replan()
+            agent.replan(nums_order_list=self.nums_order_list)
 
             # limit check
             passed_time = time.time() - local_start_time
@@ -197,6 +279,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
             if distr_time + passed_time > self.time_to_think_limit:
                 self._cut_up_to_the_limit(i)
                 return True, distr_time + max(parallel_times)
+
         return False, distr_time + max(parallel_times)
 
 
@@ -205,6 +288,8 @@ def main():
     # Alg params
     p_h = 0.95
     p_l = p_h
+    pf_weight = 1
+    pf_size = 4
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
     # alg_name = 'ParObs-SDS'
@@ -232,8 +317,8 @@ def main():
         },
         'ParObs-PF-SDS': {
             # For PF
-            'pf_weight': 1,
-            'pf_size': 4,
+            'pf_weight': pf_weight,
+            'pf_size': pf_size,
             # For RHCR
             'h': 5,  # my step
             'w': 5,  # my planning
@@ -253,7 +338,7 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=10,
+        PLOT_FROM=50,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
@@ -262,12 +347,13 @@ def main():
         # FOR ENV
         # iterations=200,  # !!!
         iterations=100,
-        n_agents=350,
+        n_agents=400,
         n_problems=1,
+        # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
-        time_to_think_limit=30,
+        time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=10000,
-        global_time_limit=60,
+        global_time_limit=180,  # seconds
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
@@ -281,3 +367,34 @@ def main():
 if __name__ == '__main__':
     main()
 
+# my_plan_len = len(self.plan) + self.heuristic_value
+# # path length + index
+# for nei_name, nei_plan in self.nei_plans_dict.items():
+#     nei_agent = self.nei_dict[nei_name]
+#     nei_heuristic_value = self.nei_h_dict[nei_name]
+#     nei_plan_len = len(nei_plan) + nei_heuristic_value
+#     if nei_name in self.a_names_in_conf_list:
+#         h_agents.append(nei_agent)
+#     elif my_plan_len > nei_plan_len:
+#         if random.random() < p_l:
+#             h_agents.append(nei_agent)
+#     elif my_plan_len < nei_plan_len:
+#         if random.random() < p_h:
+#             h_agents.append(nei_agent)
+#     elif self.num > nei_agent.num:
+#         if random.random() < p_l:
+#             h_agents.append(nei_agent)
+#     else:
+#         if random.random() < p_h:
+#             h_agents.append(nei_agent)
+# return h_agents
+
+
+# my_plan_len = int(len(self.plan) + self.heuristic_value)
+# if len(conf_plans_len_list) == 1 and conf_plans_len_list[0] == my_plan_len:
+#     return 0.5
+# conf_plans_len_list.append(my_plan_len)
+# conf_plans_len_list.sort()
+# my_order = conf_plans_len_list.index(my_plan_len)
+# prob_change = 0.9 - 0.8 * (my_order / (len(conf_plans_len_list) - 1))
+# return prob_change

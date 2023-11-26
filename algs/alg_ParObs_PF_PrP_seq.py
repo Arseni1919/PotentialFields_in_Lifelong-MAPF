@@ -37,7 +37,7 @@ class ParObsPFPrPAgent:
         self.map_dim = kwargs['map_dim']
         self.heuristic_value = None
         self.pf_field = None
-        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict = [], {}, {}, {}, {}
+        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
         self.nei_pfs = None
         self.h, self.w = set_h_and_w(self)
         self.pf_weight = set_pf_weight(self)
@@ -52,7 +52,7 @@ class ParObsPFPrPAgent:
         self.heuristic_value = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
 
     def clean_nei(self):
-        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict = [], {}, {}, {}, {}
+        self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
 
     def add_nei(self, nei_agent):
         self.nei_list.append(nei_agent)
@@ -60,11 +60,16 @@ class ParObsPFPrPAgent:
         self.nei_plans_dict[nei_agent.name] = nei_agent.plan
         self.nei_h_dict[nei_agent.name] = nei_agent.heuristic_value
         self.nei_pf_dict[nei_agent.name] = None
+        self.nei_succ_dict[nei_agent.name] = None
 
     def build_plan(self, h_agents):
         # self._execute_a_star(h_agents)
         if self.plan is None or len(self.plan) == 0:
-            self._execute_a_star(h_agents)
+            nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
+            sub_results = create_sub_results(nei_h_agents)
+            v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
+            nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
+            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
         return self.plan
 
     def correct_nei_pfs(self):
@@ -142,20 +147,18 @@ class ParObsPFPrPAgent:
 
     # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
+        if self.pf_weight == 0:
+            self.nei_pfs = None
+            return None, None
         if len(h_agents) == 0:
             return None, None
         max_plan_len = max([len(agent.plan) for agent in h_agents])
         nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
-        # [0.0, 0.25, 0.5, 0.75, 1.0] of my path taken as 0.5 - I will consider nei path
-        # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
         for nei_agent in h_agents:
             up_until_t = len(nei_agent.plan)
             weight = self._get_weight(nei_heuristic_value=nei_agent.heuristic_value)
             nei_pfs[:, :, :up_until_t] += weight * nei_agent.pf_field
-        # max_number_in_matrix = np.max(nei_pfs)
-        # if max_number_in_matrix > 0:
-        #     nei_pfs /= max_number_in_matrix
-        # nei_pfs *= self.pf_weight
+        self.nei_pfs = nei_pfs
         return nei_pfs, max_plan_len
 
     # POTENTIAL FIELDS ****************************** pf_size  ******************************
@@ -190,29 +193,14 @@ class ParObsPFPrPAgent:
                 self.pf_field[i_node.x, i_node.y, i_time] += float(gradient_list[distance_index])
         # plot_magnet_field(self.magnet_field)
 
-    def _create_constraints(self, h_agents):
-        nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
-        sub_results = create_sub_results(nei_h_agents)
-        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
-
-        # build nei-PFs
-        if self.pf_weight == 0:
-            self.nei_pfs = None
-        else:
-            nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
-            self.nei_pfs = nei_pfs
-
-        return v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem
-
-    def _execute_a_star(self, h_agents):
-        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = self._create_constraints(h_agents)
-
+    def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs):
+        # v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = self._create_constraints(h_agents)
         new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=self.next_goal_node,
                                         nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func,
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
                                         agent_name=self.name,
-                                        nei_pfs=self.nei_pfs, k_time=self.w, xyt_problem=xyt_problem)
+                                        nei_pfs=nei_pfs, k_time=self.w, xyt_problem=xyt_problem)
         if new_plan is not None:
             # pop out the current location, because you will order to move to the next location
             self.plan_succeeded = True
@@ -547,8 +535,8 @@ def main():
         PLOT_PER=1,
         PLOT_RATE=0.001,
         PLOT_FROM=1,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -558,8 +546,8 @@ def main():
         # iterations=50,
         n_agents=40,
         n_problems=1,
-        classical_rhcr_mapf=True,
-        # classical_rhcr_mapf=False,
+        # classical_rhcr_mapf=True,
+        classical_rhcr_mapf=False,
         global_time_limit=60,
         time_to_think_limit=10,  # seconds
         rhcr_mapf_limit=10000,
