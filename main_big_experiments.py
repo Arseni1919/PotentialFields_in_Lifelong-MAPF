@@ -248,12 +248,12 @@ def main():
             # AlgLNS2Seq(alg_name='(uniform)ParObs-PF-LNS2', params={'big_N': 5, 'h': 5, 'w': 5, 'pf_weight': 1, 'pf_size': 3, 'pf_weight_pref': 'uniform'}),
 
             AlgLNS2Seq(alg_name='LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
-            AlgLNS2Seq(alg_name='PF(size-1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 1}),
-            AlgLNS2Seq(alg_name='PF(size-2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 2}),
-            AlgLNS2Seq(alg_name='PF(size-3)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 3}),
-            AlgLNS2Seq(alg_name='PF(size-4)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 4}),
-            AlgLNS2Seq(alg_name='PF(size-5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 5}),
-            AlgLNS2Seq(alg_name='PF(size-10)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': 1, 'pf_size': 10}),
+            AlgLNS2Seq(alg_name='PF(size-1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': 1}),
+            AlgLNS2Seq(alg_name='PF(size-2)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': 2}),
+            AlgLNS2Seq(alg_name='PF(size-3)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': 3}),
+            AlgLNS2Seq(alg_name='PF(size-4)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': 4}),
+            AlgLNS2Seq(alg_name='PF(size-5)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': 5}),
+            AlgLNS2Seq(alg_name='PF(size-10)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': 10}),
 
             AlgLNS2Seq(alg_name='LNS2', params={'big_N': big_N, 'h': h, 'w': w}),
             AlgLNS2Seq(alg_name='PF(shape-1)-LNS2', params={'big_N': big_N, 'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size, 'pf_shape': 1.01}),
