@@ -12,11 +12,13 @@ class SimAgent:
         self.start_node: Node = start_node
         self.prev_node: Node = start_node
         self.curr_node: Node = start_node
+        self.prev_goal_node: Node = start_node
         self.next_goal_node: Node = next_goal_node
         self.closed_goal_nodes: List[Node] = []
         self.plan = []
         self.reached_the_goal = False
         self.latest_arrival = None
+        self.time_passed_from_last_goal = 0
         # self.nei_list, self.nei_dict = [], {}
 
     def latest_arrival_at_the_goal(self, iteration):
@@ -183,8 +185,10 @@ class EnvLifelongMAPF:
                 'curr_node': agent.curr_node,
                 'prev_node': agent.prev_node,
                 'next_goal_node': agent.next_goal_node,
+                'prev_goal_node': agent.prev_goal_node,
                 'closed_goal_nodes': agent.closed_goal_nodes,
                 'latest_arrival': agent.latest_arrival,
+                'time_passed_from_last_goal': agent.time_passed_from_last_goal,
                 # 'nei_list': [nei.name for nei in agent.nei_list]
             }
         return observations
@@ -194,6 +198,7 @@ class EnvLifelongMAPF:
             next_node_name = actions[agent.name]
             agent.prev_node = agent.curr_node
             agent.curr_node = self.nodes_dict[next_node_name]
+            agent.time_passed_from_last_goal += 1
             if self.classical_rhcr_mapf:
                 agent.latest_arrival_at_the_goal(self.iteration)
         # checks
@@ -203,6 +208,9 @@ class EnvLifelongMAPF:
 
     def _execute_event_new_goal(self):
         if self.classical_rhcr_mapf:
+            for agent in self.agents:
+                if agent.curr_node.xy_name == agent.next_goal_node.xy_name:
+                    agent.time_passed_from_last_goal = 0
             return []
         goals_names_list = [agent.next_goal_node.xy_name for agent in self.agents]
         available_nodes = [node for node in self.nodes if node.xy_name not in goals_names_list]
@@ -211,9 +219,11 @@ class EnvLifelongMAPF:
         for agent in self.agents:
             if agent.curr_node.xy_name == (closed_goal := agent.next_goal_node).xy_name:
                 agent.closed_goal_nodes.append(closed_goal)
+                agent.prev_goal_node = closed_goal
                 new_goal_node = available_nodes.pop()
                 agent.next_goal_node = new_goal_node
                 agent.plan = []
+                agent.time_passed_from_last_goal = 0
                 agents_names_with_new_goals.append(agent.name)
         return agents_names_with_new_goals
 

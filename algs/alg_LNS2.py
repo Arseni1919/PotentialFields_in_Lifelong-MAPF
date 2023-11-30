@@ -152,8 +152,8 @@ def main():
     big_N = 5
     h = 5
     w = h
-    pf_weight = 1
-    pf_size = 2
+    pf_weight = 2
+    pf_size = 4
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
     # alg_name = 'ParObs-LNS2'
@@ -206,7 +206,7 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=600,
+        n_agents=500,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
@@ -215,8 +215,8 @@ def main():
         global_time_limit=60,  # seconds
 
         # Map
-        # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='empty-32-32.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32

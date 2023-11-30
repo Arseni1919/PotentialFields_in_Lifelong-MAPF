@@ -279,7 +279,8 @@ def plot_env_field(ax, info):
             # ax.scatter(curr_node.y, curr_node.x, s=100, c='k')
             # ax.scatter(curr_node.y, curr_node.x, s=50, c=np.array([color_map(i)]))
     ax.scatter(others_y_list, others_x_list, s=100, c='k')
-    ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
+    # ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
+    ax.scatter(others_y_list, others_x_list, s=50, c='yellow')
 
     ax.imshow(field, origin='lower')
     ax.set_title(f'Map: {img_dir[:-4]}\n '

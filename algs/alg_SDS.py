@@ -112,26 +112,10 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
+        self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
+        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
+        # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
 
-        if random.random() < 0.9:
-            self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
-        else:
-            stuck_agents, other_agents = [], []
-            # going_agents = []
-            for agent in self.agents:
-                if not agent.plan_succeeded:
-                    stuck_agents.append(agent)
-                    continue
-                # if agent.heuristic_value > 0:
-                #     going_agents.append(agent)
-                #     continue
-                other_agents.append(agent)
-            random.shuffle(stuck_agents)
-            # random.shuffle(going_agents)
-            random.shuffle(other_agents)
-            # stuck_agents.extend(going_agents)
-            stuck_agents.extend(other_agents)
-            self.agents = stuck_agents
 
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
@@ -278,26 +262,27 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=1,
+        PLOT_FROM=10,
         # middle_plot=True,
         middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        # iterations=200,  # !!!
-        iterations=100,
-        n_agents=600,
+        iterations=200,  # !!!
+        # iterations=100,
+        # iterations=50,
+        n_agents=700,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=10000,
-        global_time_limit=180,  # seconds
+        global_time_limit=280,  # seconds
 
         # Map
-        # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='empty-32-32.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
@@ -338,3 +323,29 @@ if __name__ == '__main__':
 # my_order = conf_plans_len_list.index(my_plan_len)
 # prob_change = 0.9 - 0.8 * (my_order / (len(conf_plans_len_list) - 1))
 # return prob_change
+
+
+# self.agents.sort(key=lambda a: self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
+# print(f'\n{[a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y] for a in self.agents]}')
+
+# if random.random() < 0.9:
+#     self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
+#     # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
+#     # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=False)
+# else:
+#     stuck_agents, other_agents = [], []
+#     # going_agents = []
+#     for agent in self.agents:
+#         if not agent.plan_succeeded:
+#             stuck_agents.append(agent)
+#             continue
+#         # if agent.heuristic_value > 0:
+#         #     going_agents.append(agent)
+#         #     continue
+#         other_agents.append(agent)
+#     random.shuffle(stuck_agents)
+#     # random.shuffle(going_agents)
+#     random.shuffle(other_agents)
+#     # stuck_agents.extend(going_agents)
+#     stuck_agents.extend(other_agents)
+#     self.agents = stuck_agents

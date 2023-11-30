@@ -29,6 +29,7 @@ DONE:
 - save the data
 - improve _implement_istay()
 - implement single-shot MAPF in the simulator
+- BUG: additional step
 
 ##########################################
 ##########################################
@@ -39,7 +40,6 @@ TODO:
 
 - implement SDS
 - maybe implement the full LNS2
-- BUG: additional step
 - examine parameters on different maps
 - maybe implement learning for the PF parameters with RL
 
