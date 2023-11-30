@@ -111,8 +111,8 @@ class AlgSDS(AlgParObsPFPrPSeq):
             self.curr_iteration = 0
 
     def _sds_shuffle(self):
-        # random.shuffle(self.agents)
-        self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
+        random.shuffle(self.agents)
+        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
         # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
 
