@@ -149,11 +149,11 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_lns2_seq.pstat')
 def main():
     # Alg params
+    pf_weight = 1
+    pf_size = 4
     big_N = 5
     h = 5
     w = h
-    pf_weight = 2
-    pf_size = 4
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
     # alg_name = 'ParObs-LNS2'
@@ -197,8 +197,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=10,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -206,7 +206,7 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=500,
+        n_agents=700,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,

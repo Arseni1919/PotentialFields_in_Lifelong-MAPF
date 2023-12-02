@@ -1,3 +1,4 @@
+import random
 from typing import List, Dict
 
 import numpy as np
@@ -16,16 +17,24 @@ class SDSAgent(ParObsPFPrPAgent):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
 
-    def secondary_sds_init_plan(self):
+    def secondary_sds_init_plan(self, nums_order_list):
         if self.pf_weight == 0:
             return self.plan
         v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, {})
-        nei_pfs, max_plan_len = self._build_nei_pfs(self.nei_list)
+
+        # nei_pfs, max_plan_len = self._build_nei_pfs(self.nei_list)
+
+        h_agents = []
+        for nei in self.nei_list:
+            if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
+                h_agents.append(nei)
+        nei_pfs, max_plan_len = self._build_nei_pfs(h_agents)
+
         self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
         return self.plan
 
     def replan(self, nums_order_list):
-        if len(self.a_names_in_conf_list) != 0:
+        if len(self.a_names_in_conf_list) != 0 and random.random() < 0.95:
             h_agents = self._replan_get_h_agents(nums_order_list=nums_order_list)
             # old_plan = self.plan
             self.plan = None
@@ -112,15 +121,21 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
     def _sds_shuffle(self):
         random.shuffle(self.agents)
+
+        # i_agent = self.agents_dict['agent_0']
+        # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, i_agent.curr_node), reverse=False)
+
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
         # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
-
 
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return
         distr_time = 0
+
+        self._sds_shuffle()
+        self.nums_order_list = [a.num for a in self.agents]
 
         # init path
         time_limit_crossed, distr_time = self._all_initial_sds_assignment(distr_time)
@@ -133,8 +148,6 @@ class AlgSDS(AlgParObsPFPrPSeq):
         if time_limit_crossed:
             return
 
-        self._sds_shuffle()
-        self.nums_order_list = [a.num for a in self.agents]
 
         # while there are conflicts
         there_are_collisions = True
@@ -176,7 +189,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
             local_start_time = time.time()
 
-            agent.secondary_sds_init_plan()
+            agent.secondary_sds_init_plan(self.nums_order_list)
 
             # limit check
             passed_time = time.time() - local_start_time
@@ -262,23 +275,23 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=10,
+        PLOT_FROM=1,
         # middle_plot=True,
         middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
         # FOR ENV
-        iterations=200,  # !!!
-        # iterations=100,
+        # iterations=200,  # !!!
+        iterations=100,
         # iterations=50,
-        n_agents=700,
+        n_agents=500,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=10000,
-        global_time_limit=280,  # seconds
+        global_time_limit=60,  # seconds
 
         # Map
         img_dir='empty-32-32.map',  # 32-32
