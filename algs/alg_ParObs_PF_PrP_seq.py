@@ -63,8 +63,8 @@ class ParObsPFPrPAgent:
         self.nei_dict[nei_agent.name] = nei_agent
         self.nei_plans_dict[nei_agent.name] = nei_agent.plan
         self.nei_h_dict[nei_agent.name] = nei_agent.heuristic_value
-        self.nei_pf_dict[nei_agent.name] = None
-        self.nei_succ_dict[nei_agent.name] = None
+        self.nei_pf_dict[nei_agent.name] = None  # in the _all_exchange_plans method
+        self.nei_succ_dict[nei_agent.name] = None  # in the _all_exchange_plans method
 
     def build_plan(self, h_agents):
         # self._execute_a_star(h_agents)
@@ -253,6 +253,7 @@ class AlgParObsPFPrPSeq:
         self.h_func = None
         self.curr_iteration = None
         self.agents_names_with_new_goals = []
+        self.i_agent = None
 
         # RHCR part
         self.h, self.w = set_h_and_w(self)
@@ -300,6 +301,7 @@ class AlgParObsPFPrPSeq:
             }
         actions: {agent_name: node_name, ...}
         """
+        self.i_agent = self.agents_dict['agent_0']
         self.curr_iteration = kwargs['iteration']
 
         # update the current state
@@ -318,7 +320,7 @@ class AlgParObsPFPrPSeq:
         self._add_one_shot_to_actions(actions)
 
         alg_info = {
-            'i_agent': self.agents_dict['agent_0'],
+            'i_agent': self.i_agent,
             'i_nodes': self.nodes,
             'alg_name': self.alg_name,
             'time_to_think_limit': self.time_to_think_limit,

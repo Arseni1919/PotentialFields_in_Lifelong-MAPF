@@ -34,28 +34,46 @@ class SDSAgent(ParObsPFPrPAgent):
         return self.plan
 
     def replan(self, nums_order_list):
-        if len(self.a_names_in_conf_list) != 0 and random.random() < 0.95:
-            h_agents = self._replan_get_h_agents(nums_order_list=nums_order_list)
+        h_agents, to_continue = self._replan_get_h_agents(nums_order_list=nums_order_list)
+        if to_continue:
             # old_plan = self.plan
             self.plan = None
             self.build_plan(h_agents)
 
     def _replan_get_h_agents(self, nums_order_list):
         # h_agents = [self.nei_dict[conf_name] for conf_name in self.a_names_in_conf_list]
+        if len(self.a_names_in_conf_list) == 0:
+            return [], False
+
+        if random.random() < 0.0:
+            return [], False
+
+        in_process = 0
+        for nei in self.nei_list:
+            if nums_order_list.index(nei.num) > nums_order_list.index(self.num) and self.nei_succ_dict[nei.name]:
+                in_process += 1
+        if in_process == len(self.nei_list):
+            return [], False
+
         h_agents = []
         for nei in self.nei_list:
 
             # h_agents.append(nei)
 
-            if nei.name in self.a_names_in_conf_list:
-                if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
-                    h_agents.append(nei)
-                elif not self.nei_succ_dict[nei.name]:
-                    h_agents.append(nei)
-            else:
-                h_agents.append(nei)
+            # if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
+            #     h_agents.append(nei)
 
-        return h_agents
+            if nei.name not in self.a_names_in_conf_list:
+                h_agents.append(nei)
+                continue
+            if not self.nei_succ_dict[nei.name]:
+                h_agents.append(nei)
+                continue
+            if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
+                h_agents.append(nei)
+                continue
+
+        return h_agents, True
 
     # # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
@@ -125,6 +143,11 @@ class AlgSDS(AlgParObsPFPrPSeq):
         # i_agent = self.agents_dict['agent_0']
         # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, i_agent.curr_node), reverse=False)
 
+        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
+        # self.i_agent = self.agents[0]
+        # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, self.i_agent.curr_node), reverse=False)
+        # print(f'The i_agent: ------------------------------ {self.i_agent.name}, h-val: {self.i_agent.heuristic_value}')
+
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
         # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
@@ -148,16 +171,16 @@ class AlgSDS(AlgParObsPFPrPSeq):
         if time_limit_crossed:
             return
 
-
         # while there are conflicts
-        there_are_collisions = True
+        there_are_collisions, inner_iter = True, 0
         while there_are_collisions:
+            inner_iter += 1
 
             # exchange with neighbours
             self._all_exchange_plans()
 
             # find collisions
-            there_are_collisions, distr_time = self._all_find_conf_agents(distr_time)
+            there_are_collisions, distr_time = self._all_find_conf_agents(distr_time, inner_iter)
             if not there_are_collisions:
                 break
 
@@ -200,7 +223,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
         return False, distr_time + max(parallel_times)
 
-    def _all_find_conf_agents(self, distr_time):
+    def _all_find_conf_agents(self, distr_time, inner_iter):
         print()
         there_are_collisions, n_collisions = False, 0
         for agent1, agent2 in combinations(self.agents, 2):
@@ -215,7 +238,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
                 n_collisions += 1
                 # print(f'>>>> {agent1.name}-{agent2.name}')
                 # return there_are_collisions, distr_time
-        print(f'\n>>>> {n_collisions} collisions')
+        print(f'\n>>>> {inner_iter=}, {n_collisions} collisions')
         return there_are_collisions, distr_time
 
     def _all_exchange_plans(self):
@@ -275,9 +298,9 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=1,
-        # middle_plot=True,
-        middle_plot=False,
+        PLOT_FROM=5,
+        middle_plot=True,
+        # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -285,20 +308,22 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=500,
+        n_agents=700,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=10000,
-        global_time_limit=60,  # seconds
+        global_time_limit=6000,  # seconds
 
         # Map
-        img_dir='empty-32-32.map',  # 32-32
+        # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
+        img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
+
+        # img_dir='warehouse-10-20-10-2-1.map',  # 32-32
     )
 
 

@@ -212,12 +212,12 @@ def main():
         classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=1000,
-        global_time_limit=60,  # seconds
+        global_time_limit=6000,  # seconds
 
         # Map
-        img_dir='empty-32-32.map',  # 32-32
+        # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
+        img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
         # img_dir='warehouse-10-20-10-2-1.map',
