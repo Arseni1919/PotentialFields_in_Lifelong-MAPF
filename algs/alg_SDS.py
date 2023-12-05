@@ -45,6 +45,14 @@ class SDSAgent(ParObsPFPrPAgent):
         if len(self.a_names_in_conf_list) == 0:
             return [], False
 
+        # SDS variant
+        # h_agents = []
+        # for nei in self.nei_list:
+        #     if random.random() < 0.9:
+        #         h_agents.append(nei)
+        # return h_agents, True
+
+        # LNS variant
         if random.random() < 0.9:
             in_process = 0
             for nei in self.nei_list:
@@ -57,8 +65,6 @@ class SDSAgent(ParObsPFPrPAgent):
 
         h_agents = []
         for nei in self.nei_list:
-
-            # h_agents.append(nei)
 
             if nei.name not in self.a_names_in_conf_list:
                 h_agents.append(nei)
@@ -306,10 +312,10 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=500,
+        n_agents=50,
         n_problems=1,
-        # classical_rhcr_mapf=True,
-        classical_rhcr_mapf=False,
+        classical_rhcr_mapf=True,
+        # classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=10000,
         global_time_limit=6000,  # seconds
