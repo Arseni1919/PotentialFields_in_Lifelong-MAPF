@@ -42,6 +42,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
             self.curr_iteration = 0
+        self.i_agent = self.agents_dict['agent_0']
 
     def _build_G_c(self):
         num_of_agents = len(self.agents)
@@ -149,7 +150,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_lns2_seq.pstat')
 def main():
     # Alg params
-    pf_weight = 1
+    pf_weight = 2
     pf_size = 4
     big_N = 5
     h = 5
@@ -197,8 +198,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=10,
-        # middle_plot=True,
-        middle_plot=False,
+        middle_plot=True,
+        # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -206,7 +207,7 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=700,
+        n_agents=500,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,

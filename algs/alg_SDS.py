@@ -45,23 +45,20 @@ class SDSAgent(ParObsPFPrPAgent):
         if len(self.a_names_in_conf_list) == 0:
             return [], False
 
-        if random.random() < 0.0:
-            return [], False
-
-        in_process = 0
-        for nei in self.nei_list:
-            if nums_order_list.index(nei.num) > nums_order_list.index(self.num) and self.nei_succ_dict[nei.name]:
-                in_process += 1
-        if in_process == len(self.nei_list):
-            return [], False
+        if random.random() < 0.9:
+            in_process = 0
+            for nei in self.nei_list:
+                if nums_order_list.index(nei.num) < nums_order_list.index(self.num) and nei.name in self.a_names_in_conf_list:
+                    break
+                if nums_order_list.index(nei.num) > nums_order_list.index(self.num) and self.nei_succ_dict[nei.name]:
+                    in_process += 1
+            if in_process == len(self.nei_list):
+                return [], False
 
         h_agents = []
         for nei in self.nei_list:
 
             # h_agents.append(nei)
-
-            # if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
-            #     h_agents.append(nei)
 
             if nei.name not in self.a_names_in_conf_list:
                 h_agents.append(nei)
@@ -136,17 +133,18 @@ class AlgSDS(AlgParObsPFPrPSeq):
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
             self.curr_iteration = 0
+        self.i_agent = self.agents_dict['agent_0']
 
     def _sds_shuffle(self):
-        random.shuffle(self.agents)
+        # random.shuffle(self.agents)
 
         # i_agent = self.agents_dict['agent_0']
         # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, i_agent.curr_node), reverse=False)
 
-        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
-        # self.i_agent = self.agents[0]
-        # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, self.i_agent.curr_node), reverse=False)
-        # print(f'The i_agent: ------------------------------ {self.i_agent.name}, h-val: {self.i_agent.heuristic_value}')
+        self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
+        self.i_agent = self.agents[0]
+        self.agents.sort(key=lambda a: distance_nodes(a.curr_node, self.i_agent.curr_node), reverse=False)
+        print(f'The i_agent: ------------------------------ {self.i_agent.name}, h-val: {self.i_agent.heuristic_value}')
 
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
         # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
@@ -271,7 +269,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_sds.pstat')
 def main():
     # Alg params
-    pf_weight = 1
+    pf_weight = 2
     pf_size = 4
     h = 5
     w = h
@@ -308,7 +306,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=700,
+        n_agents=500,
         n_problems=1,
         # classical_rhcr_mapf=True,
         classical_rhcr_mapf=False,

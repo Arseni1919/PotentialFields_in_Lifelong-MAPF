@@ -290,6 +290,7 @@ class AlgParObsPFPrPSeq:
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
             self.curr_iteration = 0
+        self.i_agent = self.agents_dict['agent_0']
 
     # @check_time_limit()
     def get_actions(self, observations, **kwargs):
@@ -301,7 +302,6 @@ class AlgParObsPFPrPSeq:
             }
         actions: {agent_name: node_name, ...}
         """
-        self.i_agent = self.agents_dict['agent_0']
         self.curr_iteration = kwargs['iteration']
 
         # update the current state
