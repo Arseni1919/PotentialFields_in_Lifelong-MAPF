@@ -15,6 +15,31 @@ class LNS2Agent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
 
+    # POTENTIAL FIELDS ****************************** pf_weight ******************************
+    def _build_nei_pfs(self, h_agents):
+        if self.pf_weight == 0:
+            self.nei_pfs = None
+            return None, None
+        if len(h_agents) == 0:
+            return None, None
+        max_plan_len = max([len(agent.plan) for agent in h_agents])
+        nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
+        for nei_agent in h_agents:
+            up_until_t = len(nei_agent.plan)
+            weight = self._get_weight(nei_heuristic_value=nei_agent.heuristic_value)
+            nei_pfs[:, :, :up_until_t] += weight * nei_agent.pf_field
+
+        # # ---------- memory part ---------- # #
+        # self.memory *= 0.9
+        # norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
+        # memory_weight = 3
+        # norm_memory *= memory_weight
+        # print(norm_memory)
+
+        self.nei_pfs = nei_pfs
+        # nei_pfs += norm_memory
+        return nei_pfs, max_plan_len
+
 
 class AlgLNS2Seq(AlgParObsPFPrPSeq):
     """
@@ -150,7 +175,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_lns2_seq.pstat')
 def main():
     # Alg params
-    pf_weight = 2
+    pf_weight = 1
     pf_size = 4
     big_N = 5
     h = 5
@@ -198,8 +223,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=10,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -207,10 +232,10 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=500,
+        n_agents=450,
         n_problems=1,
-        # classical_rhcr_mapf=True,
-        classical_rhcr_mapf=False,
+        classical_rhcr_mapf=True,
+        # classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
         rhcr_mapf_limit=1000,
         global_time_limit=6000,  # seconds

@@ -41,6 +41,28 @@ import streamlit as st
 # import torchvision.transforms as T
 # from torchvision.io import ImageReadMode
 
+markers = ['-^', '-1', '-2', '-X', '-d', '-v', '-o']
+markers_iter = iter(markers)
+markers_lines_dict = defaultdict(lambda: next(markers_iter))
+colors_dict = defaultdict(lambda: None)
+
+
+markers_lines_dict['LNS2'] = '-p'
+colors_dict['LNS2'] = 'blue'
+
+markers_lines_dict['PF-LNS2'] = '-*'
+colors_dict['PF-LNS2'] = 'red'
+
+markers_lines_dict['PrP'] = '-v'
+colors_dict['PrP'] = 'green'
+
+markers_lines_dict['PF-PrP'] = '-^'
+colors_dict['PF-PrP'] = 'orange'
+
+
+
+
+
 
 
 

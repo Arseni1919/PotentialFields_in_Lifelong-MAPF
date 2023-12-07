@@ -2,6 +2,12 @@ from globals import *
 from concurrent.futures import ThreadPoolExecutor
 
 
+def check_stay_at_goal(plan, goal_node):
+    for i_node in plan:
+        if i_node.xy_name != goal_node.xy_name:
+            return False
+    return True
+
 def set_h_and_w(obj):
     if 'h' not in obj.params:
         return None, None
@@ -71,6 +77,7 @@ def plan_has_no_conf_with_vertex(plan, vertex):
 def two_plans_have_no_confs(plan1, plan2):
 
     min_len = min(len(plan1), len(plan2))
+    assert len(plan1) == len(plan2)
     prev1 = None
     prev2 = None
     for i, (vertex1, vertex2) in enumerate(zip(plan1[:min_len], plan2[:min_len])):
@@ -192,11 +199,6 @@ def build_constraints(nodes, other_paths):
     return v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem
 
 
-@lru_cache(maxsize=128)
-def manhattan_distance_nodes(node1, node2):
-    return abs(node1.x-node2.x) + abs(node1.y-node2.y)
-
-
 def get_nei_nodes(curr_node, nei_r, nodes_dict):
     nei_nodes_dict = {}
     open_list = [curr_node]
@@ -218,4 +220,9 @@ def euclidean_distance_nodes(node1, node2):
     # q = [node2.x, node2.y]
     return math.dist([node1.x, node1.y], [node2.x, node2.y])
     # return np.sqrt((node1.x - node2.x) ** 2 + (node1.y - node2.y) ** 2)
+
+
+@lru_cache(maxsize=128)
+def manhattan_distance_nodes(node1, node2):
+    return abs(node1.x-node2.x) + abs(node1.y-node2.y)
 

@@ -2,7 +2,6 @@ from globals import *
 import concurrent.futures
 from tools_for_graph import ListNodes
 from tools_for_graph import build_graph_nodes, get_dims_from_pic
-from tools_for_plotting import Plotter
 
 
 def load_h_dict(possible_dir):

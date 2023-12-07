@@ -38,6 +38,7 @@ class ParObsPFPrPAgent:
         self.map_dim = kwargs['map_dim']
         self.heuristic_value = None
         self.pf_field = None
+        self.memory = np.zeros((self.map_dim[0], self.map_dim[1]))
         self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
         self.nei_pfs = None
         self.h, self.w = set_h_and_w(self)
@@ -54,6 +55,8 @@ class ParObsPFPrPAgent:
         self.latest_arrival = obs['latest_arrival']
         self.time_passed_from_last_goal = obs['time_passed_from_last_goal']
         self.heuristic_value = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
+        if self.curr_node.xy_name != self.next_goal_node.xy_name:
+            self.memory[self.curr_node.x, self.curr_node.y] += 1
 
     def clean_nei(self):
         self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
@@ -162,6 +165,7 @@ class ParObsPFPrPAgent:
             up_until_t = len(nei_agent.plan)
             weight = self._get_weight(nei_heuristic_value=nei_agent.heuristic_value)
             nei_pfs[:, :, :up_until_t] += weight * nei_agent.pf_field
+
         self.nei_pfs = nei_pfs
         return nei_pfs, max_plan_len
 
@@ -190,6 +194,8 @@ class ParObsPFPrPAgent:
         if len(gradient_list) == 0: return
 
         self.pf_field = np.zeros((self.map_dim[0], self.map_dim[1], len(self.plan)))
+        if check_stay_at_goal(self.plan, self.next_goal_node):
+            return
         for i_time, next_node in enumerate(self.plan):
             nei_nodes, nei_nodes_dict = get_nei_nodes(next_node, len(gradient_list), self.nodes_dict)
             for i_node in nei_nodes:

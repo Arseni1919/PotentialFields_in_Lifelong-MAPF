@@ -36,13 +36,13 @@ def main():
     # file_dir = '2023-11-25--01-08_ALGS-4_RUNS-15_MAP-empty-32-32.json'
     # file_dir = '2023-11-25--12-22_ALGS-4_RUNS-15_MAP-random-32-32-10.json'
     # file_dir = '2023-11-26--00-02_ALGS-4_RUNS-15_MAP-room-32-32-4.json'
-    file_dir = '2023-11-26--12-37_ALGS-4_RUNS-15_MAP-maze-32-32-2.json'
+    # file_dir = '2023-11-26--12-37_ALGS-4_RUNS-15_MAP-maze-32-32-2.json'
 
     # MAPF
     # file_dir = 'MAPF_2023-12-01--22-53_ALGS-4_RUNS-15_MAP-empty-32-32.json'
     # file_dir = 'MAPF_2023-11-30--20-42_ALGS-4_RUNS-15_MAP-random-32-32-10.json'
     # file_dir = 'MAPF_2023-11-30--01-33_ALGS-4_RUNS-15_MAP-room-32-32-4.json'
-    # file_dir = 'MAPF_2023-11-30--16-21_ALGS-4_RUNS-15_MAP-maze-32-32-2.json'
+    file_dir = 'MAPF_2023-11-30--16-21_ALGS-4_RUNS-15_MAP-maze-32-32-2.json'
 
     # parameters
     # file_dir = '2023-11-27--07-46_ALGS-6_RUNS-15_MAP-random-32-32-10.json'  # weight
