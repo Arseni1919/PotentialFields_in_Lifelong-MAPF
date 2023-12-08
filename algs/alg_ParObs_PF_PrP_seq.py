@@ -69,14 +69,16 @@ class ParObsPFPrPAgent:
         self.nei_pf_dict[nei_agent.name] = None  # in the _all_exchange_plans method
         self.nei_succ_dict[nei_agent.name] = None  # in the _all_exchange_plans method
 
-    def build_plan(self, h_agents):
+    def build_plan(self, h_agents, goal=None):
         # self._execute_a_star(h_agents)
         if self.plan is None or len(self.plan) == 0:
             nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
             sub_results = create_sub_results(nei_h_agents)
             v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
             nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
-            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
+            if goal is None:
+                goal = self.next_goal_node
+            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs, goal=goal)
         return self.plan
 
     def correct_nei_pfs(self):
@@ -203,9 +205,12 @@ class ParObsPFPrPAgent:
                 self.pf_field[i_node.x, i_node.y, i_time] += float(gradient_list[distance_index])
         # plot_magnet_field(self.magnet_field)
 
-    def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs):
+    def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs,
+                       goal=None):
+        if goal is None:
+            goal = self.next_goal_node
         # v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = self._create_constraints(h_agents)
-        new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=self.next_goal_node,
+        new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=goal,
                                         nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func,
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
@@ -319,7 +324,7 @@ class AlgParObsPFPrPSeq:
         self._update_neighbours()
 
         # build the plans - PF part
-        self._build_plans()
+        build_plans_info = self._build_plans()
 
         # choose the actions
         actions = {agent.name: agent.choose_action() for agent in self.agents}
@@ -331,6 +336,7 @@ class AlgParObsPFPrPSeq:
             'alg_name': self.alg_name,
             'time_to_think_limit': self.time_to_think_limit,
         }
+        alg_info.update(build_plans_info)
 
         # checks
         check_actions_if_vc(self.agents, actions)
@@ -491,6 +497,7 @@ class AlgParObsPFPrPSeq:
             self._build_plans_restart()
         else:
             self._build_plans_persist()
+        return {}
 
 
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')

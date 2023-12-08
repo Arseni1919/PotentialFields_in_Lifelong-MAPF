@@ -127,7 +127,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
-            return
+            return {}
         """
         LNS2:
         - build PrP
@@ -151,7 +151,7 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
 
         time_limit_crossed = self.initial_prp_assignment(start_time)
         if time_limit_crossed:
-            return
+            return {}
 
         while (num_of_confs := self._build_G_c()) > 0:
             V_v, v = self._select_random_conf_v()
@@ -169,13 +169,14 @@ class AlgLNS2Seq(AlgParObsPFPrPSeq):
             end_time = time.time() - start_time
             if end_time > self.time_to_think_limit:
                 self._implement_istay()
-                return
+                return {}
+        return {}
 
 
 @use_profiler(save_dir='../stats/alg_lns2_seq.pstat')
 def main():
     # Alg params
-    pf_weight = 1
+    pf_weight = 0.5
     pf_size = 4
     big_N = 5
     h = 5
@@ -232,7 +233,7 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=450,
+        n_agents=400,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -242,8 +243,8 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        img_dir='random-32-32-20.map',  # 32-32
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
         # img_dir='warehouse-10-20-10-2-1.map',

@@ -16,25 +16,12 @@ class SDSAgent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
-        self.lower_agents_confirmed = []
+        self.was_already_idle = []
+        self.done_for_now = False
 
     def secondary_sds_init_plan(self, nums_order_list):
-        self.lower_agents_confirmed = []
-        last_target = self.plan[-1]
-        init_plan = self.plan
-        l_agents = []
-        for nei in self.nei_list:
-            l_agents.append(nei)
-            # if nums_order_list.index(nei.num) > nums_order_list.index(self.num):
-            #     l_agents.append(nei)
-        self.build_plan(h_agents=l_agents, goal=last_target)
-        if self.plan[-1].xy_name != last_target.xy_name:
-            self.plan = init_plan
-            self.plan_succeeded = True
-            self._fulfill_the_plan()
-            self._create_pf_field()
-            # self.build_plan([])
-
+        self.was_already_idle = []
+        self.done_for_now = False
         if self.pf_weight == 0:
             return self.plan
 
@@ -61,91 +48,42 @@ class SDSAgent(ParObsPFPrPAgent):
             # old_plan = self.plan
             self.plan = None
             self.build_plan(h_agents)
+            self.done_for_now = True
 
     def _replan_get_h_agents(self, nums_order_list, inner_iter):
         # h_agents = [self.nei_dict[conf_name] for conf_name in self.a_names_in_conf_list]
         if len(self.a_names_in_conf_list) == 0:
             return [], False
 
-        conf_orders_dict = {}
+        self.done_for_now = False
         for conf_nei_name in self.a_names_in_conf_list:
-            # conf_orders_dict[conf_nei_name] = nums_order_list.index(self.nei_dict[conf_nei_name].num)
-            conf_orders_dict[nums_order_list.index(self.nei_dict[conf_nei_name].num)] = conf_nei_name
-        conf_orders = list(conf_orders_dict.keys())
-        conf_orders.sort()
-        self_order = nums_order_list.index(self.num)
+            conf_nei = self.nei_dict[conf_nei_name]
+            if nums_order_list.index(conf_nei.num) < nums_order_list.index(self.num):
+                if not conf_nei.done_for_now:
+                    return [], False
 
-        if self_order < conf_orders[0]:
-            lower_a_name = conf_orders_dict[conf_orders[0]]
-            return self._H_policy(nums_order_list, inner_iter, lower_a_name)
-        return [], False
+        if not self.plan_succeeded:
+            self.done_for_now = True
+            return [], False
 
-    def _H_policy(self, nums_order_list, inner_iter, lower_a_name):
-        # choose L agent
-        # lower_a_name = random.choice(self.a_names_in_conf_list)
-        lower_a = self.nei_dict[lower_a_name]
-
-        if lower_a_name in self.lower_agents_confirmed:
-            lower_a.set_istay()
-        else:
-            # if L is not idle send request
-            if self.nei_succ_dict[lower_a_name]:
-                lower_a.L_policy(nums_order_list, inner_iter, self)
-                self.lower_agents_confirmed.append(lower_a_name)
-
-        # after receiving alt plan
         h_agents = []
         for nei in self.nei_list:
 
-            # idle agents
             if not self.nei_succ_dict[nei.name]:
                 h_agents.append(nei)
                 continue
-
-            # H agents
+            # if check_stay_at_goal(self.nei_plans_dict[nei.name], nei.next_goal_node):
+            #     # self.was_already_idle.append(nei.name)
+            #     h_agents.append(nei)
+            #     continue
             if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
                 h_agents.append(nei)
                 continue
-
-            # L agents that confirmed
-            if nei.name in self.lower_agents_confirmed:
-                h_agents.append(nei)
-                continue
-
-        return h_agents, True
-
-    def L_policy(self, nums_order_list, inner_iter, req_agent):
-
-        # ignore the H agent that sent the request
-        h_agents = []
-        for nei in self.nei_list:
-
-            # idle agents
-            if not self.nei_succ_dict[nei.name]:
-                h_agents.append(nei)
-                continue
-
-            # H agents
-            if nei.name != req_agent.name and nums_order_list.index(nei.num) < nums_order_list.index(self.num):
-                h_agents.append(nei)
-                continue
-
-            # L agents that confirmed
-            if nei.name in self.lower_agents_confirmed:
-                h_agents.append(nei)
-                continue
-
-            # # idle agents
-            # if nei.name != req_agent.name:
+            # if nei.name not in self.a_names_in_conf_list:
             #     h_agents.append(nei)
             #     continue
 
-        nei_nodes, nei_nodes_dict = get_nei_nodes(self.curr_node, self.h, self.nodes_dict)
-        h_agents_node_names = [nei.curr_node.xy_name for nei in h_agents]
-        nei_nodes = list(filter(lambda n: n.xy_name not in h_agents_node_names, nei_nodes))
-        rand_goal_node = random.choice(nei_nodes)
-        self.plan = None
-        self.build_plan(h_agents, goal=rand_goal_node)
+        return h_agents, True
 
     # # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
@@ -167,14 +105,14 @@ class SDSAgent(ParObsPFPrPAgent):
             nei_pfs[:, :, :up_until_t] += weight * nei_pf
 
         # # ---------- memory part ---------- # #
-        # self.memory *= 0.9
-        # norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
-        # memory_weight = 2
-        # norm_memory *= memory_weight
+        self.memory *= 0.9
+        norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
+        memory_weight = 2
+        norm_memory *= memory_weight
         # print(norm_memory)
 
         self.nei_pfs = nei_pfs
-        # nei_pfs += norm_memory
+        nei_pfs += norm_memory
         return nei_pfs, max_plan_len
 
 
@@ -202,12 +140,10 @@ class AlgSDS(AlgParObsPFPrPSeq):
             self.agents_dict[new_agent.name] = new_agent
             self.curr_iteration = 0
         self.i_agent = self.agents_dict['agent_0']
-        self.nums_order_list = [a.num for a in self.agents]
 
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
-
-        if random.random() < 0.05:
+        if random.random() < 0.1:
             others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h]
             random.shuffle(others_list)
             reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h]
@@ -216,7 +152,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
             self.agents = others_list
             return
 
-        others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h+1]
+        others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h-1]
         if len(others_list) > 0:
             others_list.sort(key=lambda a: a.heuristic_value, reverse=True)
         else:
@@ -225,7 +161,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
         if len(others_list) > 0 and self.i_agent not in others_list:
             self.i_agent = others_list[0]
         # self.i_agent = self.agents_dict['agent_0']
-        reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h+1]
+        reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h-1]
         # random.shuffle(reached_list)
         if len(others_list) > 0 and len(reached_list) > 0:
             reached_distance_dict = {}
@@ -255,7 +191,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
     def _build_plans(self):
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
-            return {'nums_order_list': self.nums_order_list}
+            return {}
         distr_time = 0
 
         self._sds_shuffle()
@@ -291,7 +227,6 @@ class AlgSDS(AlgParObsPFPrPSeq):
             time_limit_crossed, distr_time = self._all_replan(distr_time, inner_iter)
             if time_limit_crossed:
                 return {}
-        return {'nums_order_list': self.nums_order_list}
 
     def _all_initial_sds_assignment(self, distr_time):
         parallel_times = [0]
@@ -377,7 +312,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_sds.pstat')
 def main():
     # Alg params
-    pf_weight = 0.5
+    pf_weight = 1
     pf_size = 4
     h = 5
     w = h
@@ -400,11 +335,11 @@ def main():
         # GENERAL
         # random_seed=True,
         random_seed=False,
-        seed=123,
+        seed=222,
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=200,
+        PLOT_FROM=1,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
@@ -424,9 +359,9 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
-        # img_dir='room-32-32-4.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-20.map',  # 32-32
+        # img_dir='room32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='10_10_my_rand.map',  # 32-32
