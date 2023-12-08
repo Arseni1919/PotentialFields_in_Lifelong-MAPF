@@ -24,7 +24,10 @@ class SDSAgent(ParObsPFPrPAgent):
         init_plan = self.plan
         l_agents = []
         for nei in self.nei_list:
-            l_agents.append(nei)
+            # l_agents.append(nei)
+            if check_stay_at_goal(nei.plan, nei.next_goal_node):
+                l_agents.append(nei)
+                continue
             # if nums_order_list.index(nei.num) > nums_order_list.index(self.num):
             #     l_agents.append(nei)
         self.build_plan(h_agents=l_agents, goal=last_target)
@@ -77,7 +80,13 @@ class SDSAgent(ParObsPFPrPAgent):
 
         if self_order < conf_orders[0]:
             lower_a_name = conf_orders_dict[conf_orders[0]]
-            return self._H_policy(nums_order_list, inner_iter, lower_a_name)
+
+            lower_a = self.nei_dict[lower_a_name]
+            plan1 = self.get_full_plan()
+            plan2 = lower_a.get_full_plan()
+            # still in conf (but maybe the changed plan did the job already)
+            if not two_plans_have_no_confs(plan1, plan2):
+                return self._H_policy(nums_order_list, inner_iter, lower_a_name)
         return [], False
 
     def _H_policy(self, nums_order_list, inner_iter, lower_a_name):
