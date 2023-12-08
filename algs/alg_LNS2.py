@@ -238,7 +238,7 @@ def main():
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
         time_to_think_limit=30,  # seconds
-        rhcr_mapf_limit=1000,
+        rhcr_mapf_limit=10000,
         global_time_limit=6000,  # seconds
 
         # Map

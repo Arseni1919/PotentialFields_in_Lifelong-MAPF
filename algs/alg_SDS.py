@@ -16,10 +16,10 @@ class SDSAgent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
-        self.lower_agents_confirmed = []
+        self.lower_agents_processed = []
 
     def secondary_sds_init_plan(self, nums_order_list):
-        self.lower_agents_confirmed = []
+        self.lower_agents_processed = []
         last_target = self.plan[-1]
         init_plan = self.plan
         l_agents = []
@@ -94,13 +94,13 @@ class SDSAgent(ParObsPFPrPAgent):
         # lower_a_name = random.choice(self.a_names_in_conf_list)
         lower_a = self.nei_dict[lower_a_name]
 
-        if lower_a_name in self.lower_agents_confirmed:
+        if lower_a_name in self.lower_agents_processed:
             lower_a.set_istay()
         else:
             # if L is not idle send request
             if self.nei_succ_dict[lower_a_name]:
                 lower_a.L_policy(nums_order_list, inner_iter, self)
-                self.lower_agents_confirmed.append(lower_a_name)
+                self.lower_agents_processed.append(lower_a_name)
 
         # after receiving alt plan
         h_agents = []
@@ -117,7 +117,7 @@ class SDSAgent(ParObsPFPrPAgent):
                 continue
 
             # L agents that confirmed
-            if nei.name in self.lower_agents_confirmed:
+            if nei.name in self.lower_agents_processed:
                 h_agents.append(nei)
                 continue
 
@@ -140,7 +140,7 @@ class SDSAgent(ParObsPFPrPAgent):
                 continue
 
             # L agents that confirmed
-            if nei.name in self.lower_agents_confirmed:
+            if nei.name in self.lower_agents_processed:
                 h_agents.append(nei)
                 continue
 
@@ -150,9 +150,12 @@ class SDSAgent(ParObsPFPrPAgent):
             #     continue
 
         nei_nodes, nei_nodes_dict = get_nei_nodes(self.curr_node, self.h, self.nodes_dict)
-        h_agents_node_names = [nei.curr_node.xy_name for nei in h_agents]
-        nei_nodes = list(filter(lambda n: n.xy_name not in h_agents_node_names, nei_nodes))
-        rand_goal_node = random.choice(nei_nodes)
+        if self.curr_node.xy_name != self.next_goal_node.xy_name and self.next_goal_node.xy_name in nei_nodes_dict:
+            rand_goal_node = self.next_goal_node
+        else:
+            h_agents_node_names = [nei.curr_node.xy_name for nei in h_agents]
+            nei_nodes = list(filter(lambda n: n.xy_name not in h_agents_node_names, nei_nodes))
+            rand_goal_node = random.choice(nei_nodes)
         self.plan = None
         self.build_plan(h_agents, goal=rand_goal_node)
 
@@ -216,7 +219,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
 
-        if random.random() < 0.05:
+        if random.random() < 0.5:
             others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h]
             random.shuffle(others_list)
             reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h]
@@ -234,6 +237,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
         if len(others_list) > 0 and self.i_agent not in others_list:
             self.i_agent = others_list[0]
         # self.i_agent = self.agents_dict['agent_0']
+
         reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h+1]
         # random.shuffle(reached_list)
         if len(others_list) > 0 and len(reached_list) > 0:
@@ -409,11 +413,11 @@ def main():
         # GENERAL
         # random_seed=True,
         random_seed=False,
-        seed=123,
+        seed=321,
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
-        PLOT_FROM=200,
+        PLOT_FROM=1,
         middle_plot=True,
         # middle_plot=False,
         final_plot=True,
@@ -423,11 +427,11 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=400,
+        n_agents=700,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
-        time_to_think_limit=30,  # seconds
+        time_to_think_limit=60,  # seconds
         rhcr_mapf_limit=10000,
         global_time_limit=6000,  # seconds
 
