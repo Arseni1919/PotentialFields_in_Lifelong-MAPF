@@ -1,3 +1,5 @@
+import random
+
 from tools_for_graph import *
 from tools_for_plotting import *
 from tools_for_heuristics import *
@@ -151,7 +153,9 @@ def a_star_xyt(start, goal, nodes, h_func,
             else:
                 break
         succeeded = False
-        for successor_xy_name in node_current.neighbours:
+        node_current_neighbours = node_current.neighbours[:]
+        random.shuffle(node_current_neighbours)
+        for successor_xy_name in node_current_neighbours:
             node_successor, node_successor_status = get_node(
                 successor_xy_name, node_current, nodes, nodes_dict, open_nodes, closed_nodes,
                 v_constr_dict, e_constr_dict, perm_constr_dict, max_final_time, **kwargs

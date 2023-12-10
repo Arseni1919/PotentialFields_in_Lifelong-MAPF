@@ -64,6 +64,10 @@ class SDSAgent(ParObsPFPrPAgent):
             # old_plan = self.plan
             self.plan = None
             self.build_plan(h_agents)
+        # if not self.plan_succeeded:
+        #     for lower_a_name in self.lower_agents_processed:
+        #         lower_a = self.nei_dict[lower_a_name]
+        #         lower_a.set_istay()
 
     def _replan_get_h_agents(self, nums_order_list, inner_iter):
         # h_agents = [self.nei_dict[conf_name] for conf_name in self.a_names_in_conf_list]
@@ -219,14 +223,14 @@ class AlgSDS(AlgParObsPFPrPSeq):
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
 
-        if random.random() < 0.5:
-            others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h]
-            random.shuffle(others_list)
-            reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h]
-            random.shuffle(reached_list)
-            others_list.extend(reached_list)
-            self.agents = others_list
-            return
+        # if random.random() < 0.5:
+        #     others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h]
+        #     random.shuffle(others_list)
+        #     reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h]
+        #     random.shuffle(reached_list)
+        #     others_list.extend(reached_list)
+        #     self.agents = others_list
+        #     return
 
         others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h+1]
         if len(others_list) > 0:
@@ -396,8 +400,8 @@ def main():
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    # alg_name = 'ParObs-SDS'
-    alg_name = 'ParObs-PF-SDS'
+    alg_name = 'ParObs-SDS'
+    # alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
         'SDS': {},
@@ -427,7 +431,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=700,
+        n_agents=350,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
