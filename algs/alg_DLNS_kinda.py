@@ -25,7 +25,7 @@ class SDSAgent(ParObsPFPrPAgent):
         if self.pf_weight == 0:
             return self.plan
 
-        if check_stay_at_goal(self.plan, self.next_goal_node):
+        if check_stay_at_same_node(self.plan, self.next_goal_node):
             return self.plan
 
         v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, {})

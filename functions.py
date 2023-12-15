@@ -2,9 +2,9 @@ from globals import *
 from concurrent.futures import ThreadPoolExecutor
 
 
-def check_stay_at_goal(plan, goal_node):
+def check_stay_at_same_node(plan, the_node):
     for i_node in plan:
-        if i_node.xy_name != goal_node.xy_name:
+        if i_node.xy_name != the_node.xy_name:
             return False
     return True
 
@@ -91,6 +91,25 @@ def two_plans_have_no_confs(plan1, plan2):
         prev1 = vertex1
         prev2 = vertex2
     return True
+
+
+def two_plans_have_confs_at(plan1, plan2):
+
+    min_len = min(len(plan1), len(plan2))
+    assert len(plan1) == len(plan2)
+    prev1 = None
+    prev2 = None
+    for i, (vertex1, vertex2) in enumerate(zip(plan1[:min_len], plan2[:min_len])):
+        if vertex1.xy_name == vertex2.xy_name:
+            return True, i
+        if i > 0:
+            # edge1 = (prev1.xy_name, vertex1.xy_name)
+            # edge2 = (vertex2.xy_name, prev2.xy_name)
+            if (prev1.xy_name, vertex1.xy_name) == (vertex2.xy_name, prev2.xy_name):
+                return True, i
+        prev1 = vertex1
+        prev2 = vertex2
+    return False, -1
 
 # def two_plans_have_no_confs(plan1, plan2):
 #     min_len = min(len(plan1), len(plan2))

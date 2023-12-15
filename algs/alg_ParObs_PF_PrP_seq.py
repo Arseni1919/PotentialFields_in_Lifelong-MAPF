@@ -37,9 +37,11 @@ class ParObsPFPrPAgent:
         self.params = kwargs['params']
         self.map_dim = kwargs['map_dim']
         self.heuristic_value = None
+        self.heuristic_value_init = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
         self.pf_field = None
         self.memory = np.zeros((self.map_dim[0], self.map_dim[1]))
         self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
+        self.nei_num_dict = {}
         self.nei_pfs = None
         self.h, self.w = set_h_and_w(self)
         self.pf_weight = set_pf_weight(self)
@@ -60,12 +62,14 @@ class ParObsPFPrPAgent:
 
     def clean_nei(self):
         self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
+        self.nei_num_dict = {}
 
     def add_nei(self, nei_agent):
         self.nei_list.append(nei_agent)
         self.nei_dict[nei_agent.name] = nei_agent
         self.nei_plans_dict[nei_agent.name] = nei_agent.plan
         self.nei_h_dict[nei_agent.name] = nei_agent.heuristic_value
+        self.nei_num_dict[nei_agent.name] = nei_agent.num
         self.nei_pf_dict[nei_agent.name] = None  # in the _all_exchange_plans method
         self.nei_succ_dict[nei_agent.name] = None  # in the _all_exchange_plans method
 
@@ -196,7 +200,7 @@ class ParObsPFPrPAgent:
         if len(gradient_list) == 0: return
 
         self.pf_field = np.zeros((self.map_dim[0], self.map_dim[1], len(self.plan)))
-        if check_stay_at_goal(self.plan, self.next_goal_node):
+        if check_stay_at_same_node(self.plan, self.next_goal_node):
             return
         for i_time, next_node in enumerate(self.plan):
             nei_nodes, nei_nodes_dict = get_nei_nodes(next_node, len(gradient_list), self.nodes_dict)

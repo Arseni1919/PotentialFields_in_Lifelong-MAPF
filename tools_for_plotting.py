@@ -113,7 +113,7 @@ def set_legend(ax, framealpha=None, size=9):
 def plot_env_field(ax, info):
     ax.cla()
     # nodes = info['nodes']
-    a_name = info['i_agent'].name if 'i_agent' in info else 'agent_0'
+    # a_name = info['i_agent'].name if 'i_agent' in info else 'agent_0'
     iterations = info["iterations"]
     n_agents = info['n_agents']
     img_dir = info['img_dir']
@@ -123,31 +123,48 @@ def plot_env_field(ax, info):
     i_problem = info['i_problem']
     n_problems = info['n_problems']
     agents_names = info['agents_names']
+    orders_dict = info['orders_dict']
+    one_master = info['one_master']
 
     field = img_np * -1
-    color_map = plt.cm.get_cmap('hsv', n_agents)
+    # color_map = plt.cm.get_cmap('hsv', n_agents)
+    color_map = plt.cm.get_cmap('rainbow', n_agents)
     others_y_list, others_x_list, others_cm_list = [], [], []
+    a_y_list, a_x_list, a_cm_list = [], [], []
+    g_y_list, g_x_list, g_cm_list = [], [], []
     for i, agent_name in enumerate(agents_names):
         curr_node = info[agent_name]['curr_node']
-        if agent_name == a_name:
-            ax.scatter(curr_node.y, curr_node.x, s=200, c='white')
-            ax.scatter(curr_node.y, curr_node.x, s=100, c='k')
+        # if agent_name in masters_info_list:
+        if agent_name == one_master.name:
+            a_x_list.append(curr_node.x)
+            a_y_list.append(curr_node.y)
+            a_cm_list.append(color_map(0))
+            # a_cm_list.append('k')
             next_goal_node = info[agent_name]['next_goal_node']
-            ax.scatter(next_goal_node.y, next_goal_node.x, s=200, c='white', marker='X')
-            ax.scatter(next_goal_node.y, next_goal_node.x, s=100, c='red', marker='X')
+            g_x_list.append(next_goal_node.x)
+            g_y_list.append(next_goal_node.y)
         else:
             others_y_list.append(curr_node.y)
             others_x_list.append(curr_node.x)
-            others_cm_list.append(color_map(i))
+            # if agent_name in highest_orders_dict:
+            #     others_cm_list.append(color_map(0))
+            # else:
+            #     others_cm_list.append(color_map(100))
+            # others_cm_list.append(color_map(info[agent_name]['num']))
+            others_cm_list.append(color_map(orders_dict[agent_name]))
             # ax.scatter(curr_node.y, curr_node.x, s=100, c='k')
             # ax.scatter(curr_node.y, curr_node.x, s=50, c=np.array([color_map(i)]))
+    ax.scatter(a_y_list, a_x_list, s=200, c='white')
+    ax.scatter(a_y_list, a_x_list, s=100, c=np.array(a_cm_list))
+    ax.scatter(g_y_list, g_x_list, s=200, c='white', marker='X')
+    ax.scatter(g_y_list, g_x_list, s=100, c='red', marker='X')
     ax.scatter(others_y_list, others_x_list, s=100, c='k')
     ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
     # ax.scatter(others_y_list, others_x_list, s=50, c='yellow')
 
     ax.imshow(field, origin='lower')
     ax.set_title(f'Map: {img_dir[:-4]}\n '
-                 f'{n_agents} agents, selected: {a_name}\n'
+                 f'{n_agents} agents, selected: {one_master.name} - {one_master.order}\n'
                  f'(run:{i_problem + 1}/{n_problems}, time: {curr_iteration + 1}/{iterations})')
 
 
