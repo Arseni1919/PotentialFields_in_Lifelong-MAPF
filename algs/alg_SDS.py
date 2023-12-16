@@ -459,7 +459,7 @@ def main():
     # Alg params
     pf_weight = 1
     pf_size = 2
-    h = 5
+    h = 3
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
@@ -510,6 +510,7 @@ def main():
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='10_10_my_rand.map',  # 32-32
+        # img_dir='random-64-64-20.map',  # 64-64
         # img_dir='warehouse-10-20-10-2-1.map',  # 32-32
     )
 
