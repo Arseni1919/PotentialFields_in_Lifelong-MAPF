@@ -183,8 +183,8 @@ def main():
     w = h
     # alg_name = 'LNS2'
     # alg_name = 'PF-LNS2'
-    # alg_name = 'ParObs-LNS2'
-    alg_name = 'ParObs-PF-LNS2'
+    alg_name = 'ParObs-LNS2'
+    # alg_name = 'ParObs-PF-LNS2'
 
     params_dict = {
         'LNS2': {'big_N': big_N},
@@ -219,7 +219,7 @@ def main():
         # GENERAL
         # random_seed=True,
         random_seed=False,
-        seed=123,
+        seed=321,
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
@@ -233,19 +233,19 @@ def main():
         # iterations=50,  # !!!
         # iterations=200,
         iterations=100,
-        n_agents=400,
+        n_agents=200,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
-        time_to_think_limit=30,  # seconds
+        time_to_think_limit=3000,  # seconds
         rhcr_mapf_limit=10000,
         global_time_limit=6000,  # seconds
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
-        # img_dir='room-32-32-4.map',  # 32-32
+        img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
         # img_dir='warehouse-10-20-10-2-1.map',
     )
