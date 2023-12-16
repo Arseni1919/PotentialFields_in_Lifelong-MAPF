@@ -22,25 +22,14 @@ class SDSAgent(ParObsPFPrPAgent):
         self.order_init = None
         self.team_leader = None
         self.team_queue = []
-        self.master = None
-        self.master_name = None
-        self.master_prev = None
-        self.masters_info_list = []
-        self.masters_list = []
-        self.masters_visits_dict = None
         self.has_conf = True
 
     def set_order(self, order):
         self.order = order
         self.order_init = order
-        self.master = None
-        self.master_prev = None
-        self.masters_info_list = []
-        self.masters_list = []
 
     def secondary_sds_init_plan(self):
         self.lower_agents_processed = []
-        self.masters_visits_dict = {nei.name: 0 for nei in self.nei_list}
         self.has_conf = True
 
         # Decide who is your team leader, or be one
@@ -63,12 +52,12 @@ class SDSAgent(ParObsPFPrPAgent):
         if len(self.a_names_in_conf_list) == 0:
             self.has_conf = False
             return
-        # self.set_istay()
-        # return
         i_am_the_highest, lower_a = self._set_i_am_the_highest()
         if i_am_the_highest:
             self._H_policy(lower_a)
         return
+        # self.set_istay()
+        # return
 
     def _set_team_leader(self):
         orders_around = {nei.order_init: nei for nei in self.nei_list}
@@ -203,17 +192,6 @@ class SDSAgent(ParObsPFPrPAgent):
     def L_policy(self, req_agent):
         assert req_agent.name != self.name
 
-        self.master_prev = self.master
-        self.master = req_agent
-        self.master_name = req_agent.name
-        self.masters_visits_dict[req_agent.name] += 1
-        self.masters_list.append(req_agent)
-        # self._add_to_orders_visits_dict(self.order, self.master.orders_visits_dict[self.order])
-        if self.master.master:
-            self.masters_info_list.append((self.master.name, self.master.order, self.master.order_init, self.master.master.name))
-        else:
-            self.masters_info_list.append((self.master.name, self.master.order, self.master.order_init, self.master.master))
-
         # try to consider H agent that sent the request
         prev_last_node = self.plan[-1]
         self._L_policy_build_plans(req_agent, prev_last_node=prev_last_node, take_all=True)
@@ -305,7 +283,6 @@ class SDSAgent(ParObsPFPrPAgent):
         # print(norm_memory)
         self.nei_pfs = norm_memory
         return norm_memory, max_plan_len
-
 
 
 class AlgSDS(AlgParObsPFPrPSeq):
@@ -433,7 +410,6 @@ class AlgSDS(AlgParObsPFPrPSeq):
         return False, distr_time + max(parallel_times)
 
     def _all_find_conf_agents(self, distr_time, inner_iter):
-        print()
         there_are_collisions, n_collisions = False, 0
         col_str = ''
         for agent1, agent2 in combinations(self.agents, 2):
@@ -448,9 +424,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
                 agent2.a_names_in_conf_list.append((agent1.name, conf_index))
                 n_collisions += 1
                 col_str = f'{agent1.name} <-> {agent2.name}'
-                # print(f'>>>> {agent1.name}-{agent2.name}')
-                # return there_are_collisions, distr_time
-        print(f'\n>>>> {inner_iter=}, {n_collisions} collisions, last one: {col_str}')
+        print(f'\r>>>> {inner_iter=}, {n_collisions} collisions, last one: {col_str}', end='')
         return there_are_collisions, distr_time
 
     def _all_exchange_plans(self):
@@ -489,8 +463,8 @@ def main():
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    # alg_name = 'ParObs-SDS'
-    alg_name = 'ParObs-PF-SDS'
+    alg_name = 'ParObs-SDS'
+    # alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
         'SDS': {},
@@ -511,8 +485,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=1,
-        # middle_plot=True,
-        middle_plot=False,
+        middle_plot=True,
+        # middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -520,7 +494,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=200,
+        n_agents=500,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -531,8 +505,8 @@ def main():
         # Map
         # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
-        img_dir='room-32-32-4.map',  # 32-32
+        img_dir='random-32-32-20.map',  # 32-32
+        # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='10_10_my_rand.map',  # 32-32

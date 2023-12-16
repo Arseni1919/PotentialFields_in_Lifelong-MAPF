@@ -120,7 +120,7 @@ def a_star_xyt(start, goal, nodes, h_func,
 
     # start, goal, nodes = deepcopy_nodes(start, goal, nodes)  # heavy!
     start, goal, nodes = reset_nodes(start, goal, nodes, **kwargs)
-    print('\rStarted A*...', end='')
+    # print('\rStarted A*...', end='')
     open_nodes = ListNodes()
     closed_nodes = ListNodes()
     node_current = start
@@ -194,7 +194,7 @@ def a_star_xyt(start, goal, nodes, h_func,
         #     plotter.plot_lists(open_list=open_nodes.get_nodes_list(),
         #                        closed_list=closed_nodes.get_nodes_list(),
         #                        start=start, goal=goal, nodes=nodes, a_star_run=True)
-        print(f'\r(a_star) iter: {iteration}, closed: {len(closed_nodes.heap_list)}', end='')
+        # print(f'\r(a_star) iter: {iteration}, closed: {len(closed_nodes.heap_list)}', end='')
 
     path = None
     if succeeded:
