@@ -117,8 +117,8 @@ class SDSAgent(ParObsPFPrPAgent):
         first_conf_name, first_conf_dist = self.a_names_in_conf_list[0]
         first_conf_agent = self.nei_dict[first_conf_name]
         # still in conf (but maybe the changed plan did the job already)
-        if two_plans_have_no_confs(self.get_full_plan(), first_conf_agent.get_full_plan()):
-            return False, None
+        # if two_plans_have_no_confs(self.get_full_plan(), first_conf_agent.get_full_plan()):
+        #     return False, None
 
         if not first_conf_agent.plan_succeeded:
             return True, first_conf_agent
@@ -273,13 +273,6 @@ class SDSAgent(ParObsPFPrPAgent):
 
         self.plan = None
         self.build_plan(h_agents, goal=rand_goal_node)
-
-    def recursive_count(self):
-        if self.master is None:
-            return [self.name]
-        req_value = self.master.recursive_count()
-        req_value.append(self.name)
-        return req_value
 
     # # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
@@ -518,8 +511,8 @@ def main():
         # PLOT_PER=20,
         PLOT_RATE=0.001,
         PLOT_FROM=1,
-        middle_plot=True,
-        # middle_plot=False,
+        # middle_plot=True,
+        middle_plot=False,
         final_plot=True,
         # final_plot=False,
 
@@ -527,7 +520,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=400,
+        n_agents=300,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -537,9 +530,9 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
-        img_dir='room-32-32-4.map',  # 32-32
+        # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='10_10_my_rand.map',  # 32-32

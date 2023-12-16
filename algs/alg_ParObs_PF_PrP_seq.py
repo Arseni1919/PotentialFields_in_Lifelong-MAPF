@@ -507,9 +507,9 @@ class AlgParObsPFPrPSeq:
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
 def main():
     # Alg params
-    alg_name = 'PrP'
+    # alg_name = 'PrP'
     # alg_name = 'PF-PrP'
-    # alg_name = 'ParObs-PrP'
+    alg_name = 'ParObs-PrP'
     # alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
@@ -567,12 +567,12 @@ def main():
         iterations=200,
         # iterations=100,
         # iterations=50,
-        n_agents=40,
+        n_agents=300,
         n_problems=1,
-        # classical_rhcr_mapf=True,
-        classical_rhcr_mapf=False,
-        global_time_limit=60,
-        time_to_think_limit=10,  # seconds
+        classical_rhcr_mapf=True,
+        # classical_rhcr_mapf=False,
+        global_time_limit=100000,
+        time_to_think_limit=100000,  # seconds
         rhcr_mapf_limit=10000,
 
         # Map
