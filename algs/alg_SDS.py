@@ -17,11 +17,9 @@ class SDSAgent(ParObsPFPrPAgent):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
         self.lower_agents_processed = []
-        self.higher_agents_processed = []
         self.higher_agents_processed_prev = []
         self.order = None
         self.order_init = None
-        self.orders_list = []
         self.team_leader = None
         self.team_queue = []
         self.master = None
@@ -35,7 +33,6 @@ class SDSAgent(ParObsPFPrPAgent):
     def set_order(self, order):
         self.order = order
         self.order_init = order
-        self.orders_list = []
         self.master = None
         self.master_prev = None
         self.masters_info_list = []
@@ -43,7 +40,6 @@ class SDSAgent(ParObsPFPrPAgent):
 
     def secondary_sds_init_plan(self):
         self.lower_agents_processed = []
-        self.higher_agents_processed = []
         self.masters_visits_dict = {nei.name: 0 for nei in self.nei_list}
         self.has_conf = True
 
@@ -54,11 +50,12 @@ class SDSAgent(ParObsPFPrPAgent):
         if check_stay_at_same_node(self.plan, self.next_goal_node):
             return self.plan
 
-        if self.pf_weight == 0:
-            # if it is possible to avoid the standing agents - better
-            self._avoid_standing_agents()
-        else:
-            self._avoid_standing_agents()
+        self._avoid_standing_agents()
+        # if self.pf_weight == 0:
+        #     # if it is possible to avoid the standing agents - better
+        #     self._avoid_standing_agents()
+        # else:
+        #     self._avoid_standing_agents()
 
         return self.plan
 
@@ -66,6 +63,8 @@ class SDSAgent(ParObsPFPrPAgent):
         if len(self.a_names_in_conf_list) == 0:
             self.has_conf = False
             return
+        # self.set_istay()
+        # return
         i_am_the_highest, lower_a = self._set_i_am_the_highest()
         if i_am_the_highest:
             self._H_policy(lower_a)
@@ -76,12 +75,12 @@ class SDSAgent(ParObsPFPrPAgent):
         min_order = min(orders_around.keys())
         if self.order_init < min_order:
             # I am the leader
-            self.order, self.team_leader = self.order_init, self
-            self.team_queue = [self.name]
+            self.team_leader = self
         else:
             # The leader is somebody else
-            self.order, self.team_leader = min_order, orders_around[min_order]
-
+            self.team_leader = orders_around[min_order]
+            self.order = min_order
+        self.team_queue = [self.name]
 
     def _avoid_standing_agents(self):
         # if it is possible to avoid the standing agents - better
@@ -109,7 +108,7 @@ class SDSAgent(ParObsPFPrPAgent):
         self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
 
     def _set_i_am_the_highest(self):
-
+        # There is conf already
         # I am stuck
         if not self.plan_succeeded:
             return False, None
@@ -124,57 +123,51 @@ class SDSAgent(ParObsPFPrPAgent):
         if not first_conf_agent.plan_succeeded:
             return True, first_conf_agent
 
-        # I am not the leader
-        if self.order != self.order_init:
+        # another agent from the higher team
+        if first_conf_agent.order < self.order:
+            return False, None
 
-            # from different upper team
-            if self.order > first_conf_agent.order:
-                return False, None
+        # another agent from the lower team
+        if first_conf_agent.order > self.order:
+            # no need to fill some team queues
+            return True, first_conf_agent
 
-            # check if all the agents that before me in the queue finished
-            team_queue = self.team_leader.team_queue
-            if self.name in self.team_leader.team_queue:  # my name is in queue
-                # check if all above me did not finish
-                my_q_num = self.team_leader.team_queue.index(self.name)
-                for q_name in self.team_leader.team_queue[:my_q_num]:
-                    if q_name in self.nei_dict:
-                        nei = self.nei_dict[q_name]
-                        if nei.plan_succeeded and nei.has_conf:
-                            return False, None
-            else:  # my name is not in queue
-                # check if all in the queue did not finish
-                for q_name in self.team_leader.team_queue:
-                    if q_name in self.nei_dict:
-                        nei = self.nei_dict[q_name]
-                        if nei.plan_succeeded and nei.has_conf:
-                            return False, None
+        if not first_conf_agent.plan_succeeded:
+            return True, first_conf_agent
 
-            # from the same team and different order_init
-            if self.order == first_conf_agent.order:
-                if self.order_init > first_conf_agent.order_init:
-                    return False, None
-            # if self.order < first_conf_agent.order:
-            #     pass
+        # check if all the agents that before me in the queue finished
+        team_queue = self.team_leader.team_queue
+        if self.name in self.team_leader.team_queue:  # my name is in queue
+            # check if all above me did not finish
+            my_q_num = self.team_leader.team_queue.index(self.name)
+            for q_name in self.team_leader.team_queue[:my_q_num]:
+                if q_name in self.nei_dict:
+                    nei = self.nei_dict[q_name]
+                    if nei.plan_succeeded and nei.has_conf:
+                        return False, None
+        else:  # my name is not in queue
+            # check if all in the queue did not finish
+            for q_name in self.team_leader.team_queue:
+                if q_name in self.nei_dict:
+                    nei = self.nei_dict[q_name]
+                    if nei.plan_succeeded and nei.has_conf:
+                        return False, None
 
         if self.name not in self.team_leader.team_queue:
+            # from the same team and different order_init
+            if self.order_init > first_conf_agent.order_init:
+                return False, None
             self.team_leader.team_queue.append(self.name)
         self.team_leader.team_queue.append(first_conf_agent.name)
         return True, first_conf_agent
 
-    def get_higher_agents_processed(self):
-        self.higher_agents_processed = self.recursive_count()
-        self.higher_agents_processed.remove(self.name)
-        return self.higher_agents_processed
-
     def _H_policy(self, lower_a):
-
-        # if lower_a.name in self.lower_agents_processed:
-        #     assert check_stay_at_same_node(lower_a.plan, lower_a.curr_node)
-            # lower_a.set_istay()
 
         # if L is not idle send request
         if lower_a.plan_succeeded:
             to_continue = lower_a.L_policy(self)
+            if self.order < lower_a.order:
+                self.lower_agents_processed.append(lower_a.name)
             if not to_continue:
                 return
 
@@ -188,8 +181,17 @@ class SDSAgent(ParObsPFPrPAgent):
                 continue
 
             # H + L agents
-            # if nums_order_list.index(nei.num) < nums_order_list.index(self.num):
             if nei.name in self.team_leader.team_queue:
+                h_agents.append(nei)
+                continue
+
+            # consider all the higher teams
+            if nei.team_leader.order_init < self.team_leader.order_init:
+                h_agents.append(nei)
+                continue
+
+            # this one for the agents from the lower teams
+            if nei.name in self.lower_agents_processed:
                 h_agents.append(nei)
                 continue
 
@@ -212,7 +214,7 @@ class SDSAgent(ParObsPFPrPAgent):
         else:
             self.masters_info_list.append((self.master.name, self.master.order, self.master.order_init, self.master.master))
 
-        # try to avoid by considering H agent that sent the request
+        # try to consider H agent that sent the request
         prev_last_node = self.plan[-1]
         self._L_policy_build_plans(req_agent, prev_last_node=prev_last_node, take_all=True)
         if self.plan_succeeded and self.plan[-1].xy_name == prev_last_node.xy_name:
@@ -233,24 +235,22 @@ class SDSAgent(ParObsPFPrPAgent):
             # idle agents
             if not nei.plan_succeeded:
                 h_agents.append(nei)
-                assert req_agent not in h_agents
                 continue
 
-            # queue of req_agent's team leader
-            if nei.name != req_agent.name and nei.name in req_agent.team_leader.team_queue:
-                h_agents.append(nei)
-                continue
-
-            # queue of my team leader
+            # H + L agents
             if nei.name != req_agent.name and nei.name in self.team_leader.team_queue:
                 h_agents.append(nei)
                 continue
 
-            # queues of my previous masters
-            for master in self.masters_list:
-                if nei.name != req_agent.name and nei.name in master.team_leader.team_queue:
-                    h_agents.append(nei)
-                    continue
+            # consider all the higher teams
+            if nei.name != req_agent.name and nei.team_leader.order_init < self.team_leader.order_init:
+                h_agents.append(nei)
+                continue
+
+            # this one for the req_agent's lower teams
+            if nei.name != req_agent.name and nei.name in req_agent.lower_agents_processed:
+                h_agents.append(nei)
+                continue
 
         if not take_all:
             assert req_agent not in h_agents
@@ -259,7 +259,10 @@ class SDSAgent(ParObsPFPrPAgent):
         if prev_last_node:
             rand_goal_node = prev_last_node
         elif self.curr_node.xy_name != self.next_goal_node.xy_name and self.next_goal_node.xy_name in nei_nodes_dict:
-            rand_goal_node = self.next_goal_node
+            # rand_goal_node = self.next_goal_node
+            nei_t_nodes, nei_t_nodes_dict = get_nei_nodes(self.next_goal_node, self.h, self.nodes_dict)
+            nei_nodes = list(filter(lambda n: n.xy_name in nei_t_nodes_dict, nei_nodes))
+            rand_goal_node = random.choice(nei_nodes) if len(nei_nodes) != 0 else self.curr_node
         else:
             h_agents_node_names = [nei.curr_node.xy_name for nei in h_agents]
             # h_agents_node_names.extend([nei.plan[-1].xy_name for nei in h_agents])
@@ -283,30 +286,33 @@ class SDSAgent(ParObsPFPrPAgent):
         if self.pf_weight == 0:
             self.nei_pfs = None
             return None, None
+        # if len(h_agents) == 0:
+        #     return None, None
+        # max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
+        # nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
+        # for nei_agent in h_agents:
+        #
+        #     nei_plan = self.nei_plans_dict[nei_agent.name]
+        #     nei_heuristic_value = self.nei_h_dict[nei_agent.name]
+        #     nei_pf = self.nei_pf_dict[nei_agent.name]
+        #
+        #     up_until_t = len(nei_plan)
+        #     weight = self._get_weight(nei_heuristic_value=nei_heuristic_value)
+        #     nei_pfs[:, :, :up_until_t] += weight * nei_pf
+        # self.nei_pfs = nei_pfs
+        # return nei_pfs, max_plan_len
+
+        # # ---------- memory part ---------- # #
         if len(h_agents) == 0:
             return None, None
         max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
-        nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
-        for nei_agent in h_agents:
-
-            nei_plan = self.nei_plans_dict[nei_agent.name]
-            nei_heuristic_value = self.nei_h_dict[nei_agent.name]
-            nei_pf = self.nei_pf_dict[nei_agent.name]
-
-            up_until_t = len(nei_plan)
-            weight = self._get_weight(nei_heuristic_value=nei_heuristic_value)
-            nei_pfs[:, :, :up_until_t] += weight * nei_pf
-
-        # # ---------- memory part ---------- # #
-        # self.memory *= 0.9
-        # norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
-        # memory_weight = 2
-        # norm_memory *= memory_weight
+        self.memory *= 0.9
+        norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
+        norm_memory *= self.pf_weight
         # print(norm_memory)
+        self.nei_pfs = norm_memory
+        return norm_memory, max_plan_len
 
-        self.nei_pfs = nei_pfs
-        # nei_pfs += norm_memory
-        return nei_pfs, max_plan_len
 
 
 class AlgSDS(AlgParObsPFPrPSeq):
@@ -334,59 +340,29 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
-
-        # if random.random() < 0.5:
-        #     others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h]
-        #     random.shuffle(others_list)
-        #     reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h]
-        #     random.shuffle(reached_list)
-        #     others_list.extend(reached_list)
-        #     self.agents = others_list
-        #     return
-
-        others_list = [a for a in self.agents if a.time_passed_from_last_goal > self.h+1]
+        failed_list = [a for a in self.agents if not a.plan_succeeded]
+        succ_list = [a for a in self.agents if a.plan_succeeded]
+        others_list = [a for a in succ_list if a.time_passed_from_last_goal > self.h+1]
         random.shuffle(others_list)
-        # if len(others_list) > 0:
-        #     others_list.sort(key=lambda a: a.heuristic_value_init, reverse=True)
         # choose i_agent
-        if len(others_list) > 0 and self.i_agent not in others_list:
-            self.i_agent = others_list[0]
-        # self.i_agent = self.agents_dict['agent_0']
-
-        reached_list = [a for a in self.agents if a.time_passed_from_last_goal <= self.h+1]
+        reached_list = [a for a in succ_list if a.time_passed_from_last_goal <= self.h+1]
         random.shuffle(reached_list)
-        # if len(others_list) > 0 and len(reached_list) > 0:
-        #     reached_distance_dict = {}
-        #     for r_a in reached_list:
-        #         r_a_distances = []
-        #         for o_a in others_list:
-        #             distance = manhattan_distance_nodes(r_a.curr_node, o_a.curr_node)
-        #             r_a_distances.append(distance)
-        #         reached_distance_dict[r_a.name] = min(r_a_distances)
-        #     reached_list.sort(key=lambda a: reached_distance_dict[a.name])
-        # else:
-        #     random.shuffle(reached_list)
-        others_list.extend(reached_list)
-        self.agents = others_list
+        failed_list.extend(others_list)
+        if len(others_list) > 0 and self.i_agent not in failed_list:
+            self.i_agent = others_list[0]
+        failed_list.extend(reached_list)
+        self.agents = failed_list
+        # others_list.extend(reached_list)
+        # self.agents = others_list
         for i, agent in enumerate(self.agents):
             agent.set_order(i)
-
-        # i_agent = self.agents_dict['agent_0']
-        # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, i_agent.curr_node), reverse=False)
-
-        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
-        # self.i_agent = self.agents[0]
-        # self.agents.sort(key=lambda a: distance_nodes(a.curr_node, self.i_agent.curr_node), reverse=False)
-        # print(f'The i_agent: ------------------------------ {self.i_agent.name}, val: {self.i_agent.time_passed_from_last_goal}')
-
-        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal + self.h_dict[a.prev_goal_node.xy_name][a.next_goal_node.x, a.next_goal_node.y], reverse=True)
-        # self.agents.sort(key=lambda a: a.time_passed_from_last_goal, reverse=True)
-        # self.agents.sort(key=lambda a: a.heuristic_value, reverse=True)
 
     def _get_info_to_send(self):
         orders_dict = {}
         if self.curr_iteration != 0:
-            orders_dict = {agent.name: agent.order for agent in self.agents}
+            orders_dict = {agent.name: agent.team_leader.name for agent in self.agents}
+            leaders_name = list(set(orders_dict.values()))
+            orders_dict = {k: leaders_name.index(v) for k, v in orders_dict.items()}
         info_to_send = {'orders_dict': orders_dict, 'one_master': self.i_agent}
         return info_to_send
 
@@ -514,14 +490,14 @@ class AlgSDS(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_sds.pstat')
 def main():
     # Alg params
-    pf_weight = 0.5
+    pf_weight = 1
     pf_size = 2
     h = 5
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    alg_name = 'ParObs-SDS'
-    # alg_name = 'ParObs-PF-SDS'
+    # alg_name = 'ParObs-SDS'
+    alg_name = 'ParObs-PF-SDS'
 
     params_dict = {
         'SDS': {},
@@ -551,19 +527,19 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=200,
+        n_agents=400,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
-        time_to_think_limit=60,  # seconds
+        time_to_think_limit=100000,  # seconds
         rhcr_mapf_limit=10000,
         global_time_limit=6000,  # seconds
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        img_dir='random-32-32-20.map',  # 32-32
-        # img_dir='room-32-32-4.map',  # 32-32
+        # img_dir='random-32-32-20.map',  # 32-32
+        img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='10_10_my_rand.map',  # 32-32

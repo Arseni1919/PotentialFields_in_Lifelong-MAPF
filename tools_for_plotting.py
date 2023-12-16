@@ -138,7 +138,7 @@ def plot_env_field(ax, info):
         if agent_name == one_master.name:
             a_x_list.append(curr_node.x)
             a_y_list.append(curr_node.y)
-            a_cm_list.append(color_map(0))
+            a_cm_list.append(color_map(orders_dict[agent_name] * 100))
             # a_cm_list.append('k')
             next_goal_node = info[agent_name]['next_goal_node']
             g_x_list.append(next_goal_node.x)
@@ -151,7 +151,7 @@ def plot_env_field(ax, info):
             # else:
             #     others_cm_list.append(color_map(100))
             # others_cm_list.append(color_map(info[agent_name]['num']))
-            others_cm_list.append(color_map(orders_dict[agent_name]))
+            others_cm_list.append(color_map(orders_dict[agent_name] * 100))
             # ax.scatter(curr_node.y, curr_node.x, s=100, c='k')
             # ax.scatter(curr_node.y, curr_node.x, s=50, c=np.array([color_map(i)]))
     ax.scatter(a_y_list, a_x_list, s=200, c='white')
