@@ -2,6 +2,11 @@ from globals import *
 from concurrent.futures import ThreadPoolExecutor
 
 
+def get_color(i):
+    index_to_pick = i % len(color_names)
+    return color_names[index_to_pick]
+
+
 def check_stay_at_same_node(plan, the_node):
     for i_node in plan:
         if i_node.xy_name != the_node.xy_name:

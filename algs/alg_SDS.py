@@ -23,6 +23,7 @@ class SDSAgent(ParObsPFPrPAgent):
         self.team_leader = None
         self.team_queue = []
         self.has_conf = True
+        self.mem_weight = self.params['mem_weight'] if 'mem_weight' in self.params else 0
 
     def set_order(self, order):
         self.order = order
@@ -254,7 +255,7 @@ class SDSAgent(ParObsPFPrPAgent):
 
     # # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
-        if self.pf_weight == 0:
+        if self.mem_weight == 0:
             self.nei_pfs = None
             return None, None
         # if len(h_agents) == 0:
@@ -279,7 +280,7 @@ class SDSAgent(ParObsPFPrPAgent):
         max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
         self.memory *= 0.9
         norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
-        norm_memory *= self.pf_weight
+        norm_memory *= self.mem_weight
         # print(norm_memory)
         self.nei_pfs = norm_memory
         return norm_memory, max_plan_len
@@ -310,18 +311,25 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
     def _sds_shuffle(self):
         # random.shuffle(self.agents)
-        failed_list = [a for a in self.agents if not a.plan_succeeded]
+        final_list = [a for a in self.agents if not a.plan_succeeded]
         succ_list = [a for a in self.agents if a.plan_succeeded]
         others_list = [a for a in succ_list if a.time_passed_from_last_goal > self.h+1]
         random.shuffle(others_list)
         # choose i_agent
         reached_list = [a for a in succ_list if a.time_passed_from_last_goal <= self.h+1]
         random.shuffle(reached_list)
-        failed_list.extend(others_list)
-        if len(others_list) > 0 and self.i_agent not in failed_list:
+        final_list.extend(others_list)
+        if len(others_list) > 0 and self.i_agent not in final_list:
             self.i_agent = others_list[0]
-        failed_list.extend(reached_list)
-        self.agents = failed_list
+        final_list.extend(reached_list)
+
+        # a_name = 'agent_20'
+        # a = self.agents_dict[a_name]
+        # final_list.remove(a)
+        # final_list.insert(0, a)
+        # self.i_agent = a
+
+        self.agents = final_list
         # others_list.extend(reached_list)
         # self.agents = others_list
         for i, agent in enumerate(self.agents):
@@ -330,9 +338,10 @@ class AlgSDS(AlgParObsPFPrPSeq):
     def _get_info_to_send(self):
         orders_dict = {}
         if self.curr_iteration != 0:
-            orders_dict = {agent.name: agent.team_leader.name for agent in self.agents}
-            leaders_name = list(set(orders_dict.values()))
-            orders_dict = {k: leaders_name.index(v) for k, v in orders_dict.items()}
+            orders_dict = {agent.name: agent.order for agent in self.agents}
+            leaders_orders = list(set(orders_dict.values()))
+            leaders_orders.sort()
+            orders_dict = {k: leaders_orders.index(v) for k, v in orders_dict.items()}
         info_to_send = {'orders_dict': orders_dict, 'one_master': self.i_agent}
         return info_to_send
 
@@ -457,20 +466,20 @@ class AlgSDS(AlgParObsPFPrPSeq):
 @use_profiler(save_dir='../stats/alg_sds.pstat')
 def main():
     # Alg params
-    pf_weight = 1
-    pf_size = 2
+    # mem_weight = 1
+    mem_weight = 2
     h = 3
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
-    alg_name = 'ParObs-SDS'
-    # alg_name = 'ParObs-PF-SDS'
+    # alg_name = 'ParObs-SDS'
+    alg_name = 'ParObs-Memory-SDS'
 
     params_dict = {
         'SDS': {},
-        'PF-SDS': {'pf_weight': pf_weight, 'pf_size': pf_size},
+        'PF-SDS': {'pf_weight': mem_weight},
         'ParObs-SDS': {'h': h, 'w': w},
-        'ParObs-PF-SDS': {'h': h, 'w': w, 'pf_weight': pf_weight, 'pf_size': pf_size},
+        'ParObs-Memory-SDS': {'h': h, 'w': w, 'mem_weight': mem_weight},
     }
 
     alg = AlgSDS(params=params_dict[alg_name], alg_name=alg_name)
@@ -494,7 +503,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=500,
+        n_agents=300,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -505,8 +514,8 @@ def main():
         # Map
         # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        img_dir='random-32-32-20.map',  # 32-32
-        # img_dir='room-32-32-4.map',  # 32-32
+        # img_dir='random-32-32-20.map',  # 32-32
+        img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='10_10_my_rand.map',  # 32-32

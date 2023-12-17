@@ -1,5 +1,3 @@
-# from globals import *
-import random
-a = random.choice([])
+a =  99 % 100
 
 print(a)
