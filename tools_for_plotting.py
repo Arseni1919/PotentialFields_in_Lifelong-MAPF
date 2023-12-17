@@ -124,8 +124,10 @@ def plot_env_field(ax, info):
     i_problem = info['i_problem']
     n_problems = info['n_problems']
     agents_names = info['agents_names']
+    agents_names.sort()
     orders_dict = info['orders_dict']
     one_master = info['one_master']
+    # one_master = 'agent_0'
 
     field = img_np * -1
     others_y_list, others_x_list, others_cm_list = [], [], []
@@ -134,6 +136,7 @@ def plot_env_field(ax, info):
     for i, agent_name in enumerate(agents_names):
         curr_node = info[agent_name]['curr_node']
         if agent_name == one_master.name:
+        # if agent_name == one_master:
             a_x_list.append(curr_node.x)
             a_y_list.append(curr_node.y)
             a_cm_list.append(get_color(orders_dict[agent_name]))
@@ -145,6 +148,7 @@ def plot_env_field(ax, info):
             others_y_list.append(curr_node.y)
             others_x_list.append(curr_node.x)
             others_cm_list.append(get_color(orders_dict[agent_name]))
+            # others_cm_list.append(get_color(agents_names.index(agent_name)))
     ax.scatter(a_y_list, a_x_list, s=200, c='white')
     ax.scatter(a_y_list, a_x_list, s=100, c=np.array(a_cm_list))
     ax.scatter(g_y_list, g_x_list, s=200, c='white', marker='X')

@@ -16,6 +16,7 @@ class SDSAgent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
+        self.a_names_in_conf_list_prev = []
         self.lower_agents_processed = []
         self.higher_agents_processed_prev = []
         self.order = None
@@ -24,6 +25,7 @@ class SDSAgent(ParObsPFPrPAgent):
         self.team_queue = []
         self.has_conf = True
         self.mem_weight = self.params['mem_weight'] if 'mem_weight' in self.params else 0
+        self.changed_path = True
 
     def set_order(self, order):
         self.order = order
@@ -32,6 +34,7 @@ class SDSAgent(ParObsPFPrPAgent):
     def secondary_sds_init_plan(self):
         self.lower_agents_processed = []
         self.has_conf = True
+        self.changed_path = True
 
         # Decide who is your team leader, or be one
         self._set_team_leader()
@@ -187,7 +190,7 @@ class SDSAgent(ParObsPFPrPAgent):
 
         self.plan = None
         self.build_plan(h_agents)
-
+        self.changed_path = True
         return
 
     def L_policy(self, req_agent):
@@ -252,27 +255,13 @@ class SDSAgent(ParObsPFPrPAgent):
 
         self.plan = None
         self.build_plan(h_agents, goal=rand_goal_node)
+        self.changed_path = True
 
     # # POTENTIAL FIELDS ****************************** pf_weight ******************************
     def _build_nei_pfs(self, h_agents):
         if self.mem_weight == 0:
             self.nei_pfs = None
             return None, None
-        # if len(h_agents) == 0:
-        #     return None, None
-        # max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
-        # nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
-        # for nei_agent in h_agents:
-        #
-        #     nei_plan = self.nei_plans_dict[nei_agent.name]
-        #     nei_heuristic_value = self.nei_h_dict[nei_agent.name]
-        #     nei_pf = self.nei_pf_dict[nei_agent.name]
-        #
-        #     up_until_t = len(nei_plan)
-        #     weight = self._get_weight(nei_heuristic_value=nei_heuristic_value)
-        #     nei_pfs[:, :, :up_until_t] += weight * nei_pf
-        # self.nei_pfs = nei_pfs
-        # return nei_pfs, max_plan_len
 
         # # ---------- memory part ---------- # #
         if len(h_agents) == 0:
@@ -424,20 +413,32 @@ class AlgSDS(AlgParObsPFPrPSeq):
         for agent1, agent2 in combinations(self.agents, 2):
             if agent1.name not in agent2.nei_dict:
                 continue
-            plan1 = agent1.get_full_plan()
-            plan2 = agent2.get_full_plan()
-            have_confs, conf_index = two_plans_have_confs_at(plan1, plan2)
+            if not agent1.changed_path and not agent2.changed_path:
+                the_conf = list(filter(lambda x: x[0] == agent2.name, agent1.a_names_in_conf_list_prev))
+                if len(the_conf) == 0:
+                    have_confs = False
+                else:
+                    have_confs = True
+                    conf_index = the_conf[0][1]
+            else:
+                plan1 = agent1.get_full_plan()
+                plan2 = agent2.get_full_plan()
+                have_confs, conf_index = two_plans_have_confs_at(plan1, plan2)
             if have_confs:
                 there_are_collisions = True
                 agent1.a_names_in_conf_list.append((agent2.name, conf_index))
                 agent2.a_names_in_conf_list.append((agent1.name, conf_index))
                 n_collisions += 1
                 col_str = f'{agent1.name} <-> {agent2.name}'
+        for agent1, agent2 in combinations(self.agents, 2):
+            agent1.changed_path = False
+            agent2.changed_path = False
         print(f'\r>>>> {inner_iter=}, {n_collisions} collisions, last one: {col_str}', end='')
         return there_are_collisions, distr_time
 
     def _all_exchange_plans(self):
         for agent in self.agents:
+            agent.a_names_in_conf_list_prev = agent.a_names_in_conf_list
             agent.a_names_in_conf_list = []
             agent.nei_plans_dict = {nei.name: nei.plan for nei in agent.nei_list}
             agent.nei_h_dict = {nei.name: nei.heuristic_value for nei in agent.nei_list}
@@ -468,7 +469,7 @@ def main():
     # Alg params
     # mem_weight = 1
     mem_weight = 2
-    h = 3
+    h = 5
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
@@ -503,7 +504,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=300,
+        n_agents=350,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -518,10 +519,17 @@ def main():
         img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
+        # img_dir='tree.map', predefined_nodes=True, scen_name='tree',  # yes
+        # img_dir='corners.map', predefined_nodes=True, scen_name='corners',  # yes
+        # img_dir='tunnel.map', predefined_nodes=True, scen_name='tunnel',  # yes (slow)
+        # img_dir='string.map', predefined_nodes=True, scen_name='string',  # yes
+        # img_dir='loop_chain.map', predefined_nodes=True, scen_name='loop_chain',  # no
+        # img_dir='connector.map', predefined_nodes=True, scen_name='connector',  # yes
         # img_dir='10_10_my_rand.map',  # 32-32
         # img_dir='random-64-64-20.map',  # 64-64
         # img_dir='warehouse-10-20-10-2-1.map',  # 32-32
     )
+
 
 
 if __name__ == '__main__':

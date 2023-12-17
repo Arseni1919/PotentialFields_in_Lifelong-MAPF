@@ -76,7 +76,13 @@ def parallel_build_heuristic_for_entire_map(nodes, map_dim, **kwargs):
             executor.submit(parallel_update_h_table, node, nodes, map_dim, h_dict, node_index, **kwargs)
     save_h_dict(h_dict, possible_dir)
     print(f'\nFinished to build heuristic for all nodes.')
-    return h_dict
+
+    h_dict = load_h_dict(possible_dir)
+    if h_dict is not None:
+        print(f'\nFinished to build heuristic for all nodes.')
+        return h_dict
+
+    raise RuntimeError('nu nu')
 
 
 # def parallel_build_heuristic_for_multiple_targets(target_nodes, nodes, map_dim, **kwargs):

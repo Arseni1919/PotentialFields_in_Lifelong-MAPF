@@ -22,10 +22,12 @@ class ParObsPFPrPAgent:
         self.num = num
         self.name = f'agent_{num}'
         self.start_node: Node = start_node
+        self.name_start_node = start_node.xy_name
         self.prev_node: Node = start_node
         self.curr_node: Node = start_node
         self.prev_goal_node: Node = start_node
         self.next_goal_node: Node = next_goal_node
+        self.name_next_goal_node = next_goal_node.xy_name
         self.first_goal_node: Node = next_goal_node
         self.closed_goal_nodes: List[Node] = []
         self.plan = None

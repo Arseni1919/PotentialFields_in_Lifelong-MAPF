@@ -185,12 +185,25 @@ def build_graph_nodes(img_dir, path='maps', show_map=False):
     return build_graph_from_np(img_np, show_map)
 
 
+def get_edge_nodes(nodes_type, scen_name, nodes_dict, path='scens'):
+    possible_dir = f"{path}/{scen_name}.json"
+    nodes_to_return = []
+    if os.path.exists(possible_dir):
+        # Opening JSON file
+        with open(possible_dir, 'r') as openfile:
+            # Reading from json file
+            scen = json.load(openfile)
+            for pair in scen[nodes_type]:
+                nodes_to_return.append(nodes_dict[f'{pair[0]}_{pair[1]}'])
+    return nodes_to_return
+
+
 def main():
-    # img_dir = 'empty-32-32.map'  # 32-32
+    img_dir = 'empty-32-32.map'  # 32-32
     # img_dir = 'random-32-32-10.map'  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
     # img_dir = 'random-32-32-20.map'  # 32-32
     # img_dir = 'room-32-32-4.map'  # 32-32
-    img_dir = 'maze-32-32-2.map'  # 32-32
+    # img_dir = 'maze-32-32-2.map'  # 32-32
     # img_dir = 'den312d.map'  # 65-81
     # img_dir = 'room-64-64-8.map'  # 64-64
     # img_dir = 'warehouse-10-20-10-2-1.map'  # 63-161
@@ -204,7 +217,9 @@ def main():
     # img_dir = 'den520d.map'  # 257-256
     # img_dir = 'ht_mansion_n.map'  # 270-133
     # img_dir = 'brc202d.map'  # 481-530
-    nodes, nodes_dict, img_np = build_graph_nodes(img_dir=img_dir, path='maps', show_map=True)
+    nodes, nodes_dict, img_np = build_graph_nodes(img_dir=img_dir, path='maps', show_map=False)
+    start_nodes = get_edge_nodes(nodes_type='starts', scen_name='tree', nodes_dict=nodes_dict)
+    goal_nodes = get_edge_nodes(nodes_type='goals', scen_name='tree', nodes_dict=nodes_dict)
     print()
 
 

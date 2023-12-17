@@ -13,6 +13,7 @@ def check_stay_at_same_node(plan, the_node):
             return False
     return True
 
+
 def set_h_and_w(obj):
     if 'h' not in obj.params:
         return None, None
@@ -115,27 +116,6 @@ def two_plans_have_confs_at(plan1, plan2):
         prev1 = vertex1
         prev2 = vertex2
     return False, -1
-
-# def two_plans_have_no_confs(plan1, plan2):
-#     min_len = min(len(plan1), len(plan2))
-#     names_1 = [v.xy_name for v in plan1[:min_len]]
-#     names_2 = [v.xy_name for v in plan2[:min_len]]
-#
-#     if any(map(operator.eq, names_1, names_2)):
-#         return False
-#
-#     prev1 = names_1[0]
-#     prev2 = names_2[0]
-#     for name_1, name_2 in zip(names_1[1:], names_2[1:]):
-#         edge1 = (prev1, name_1)
-#         edge2 = (name_2, prev2)
-#         if edge1 == edge2:
-#             return False
-#         prev1 = name_1
-#         prev2 = name_2
-#         # if vertex1.xy_name == vertex2.xy_name:
-#         #     return False
-#     return True
 
 
 def check_actions_if_vc(agents, actions):

@@ -26,6 +26,9 @@ def test_single_alg(alg, **kwargs):
     time_to_think_limit = kwargs['time_to_think_limit']
     rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
     global_time_limit = kwargs['global_time_limit']
+    predefined_nodes = kwargs['predefined_nodes'] if 'predefined_nodes' in kwargs else False
+    scen_name = kwargs['scen_name'] if predefined_nodes else None
+
     # Map
     img_dir = kwargs['img_dir']
 
@@ -66,7 +69,7 @@ def test_single_alg(alg, **kwargs):
 
     for i_problem in range(n_problems):
 
-        observations = env.reset(same_start=False)
+        observations = env.reset(same_start=False, predefined=predefined_nodes, scen_name=scen_name)
 
         # !!!!!!!!!!!!!!!!!
         alg.reset()

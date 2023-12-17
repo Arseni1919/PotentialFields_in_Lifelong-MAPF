@@ -82,11 +82,14 @@ class EnvLifelongMAPF:
             # self.fig, self.ax = plt.subplots(figsize=(7, 7))
             self.fig, self.ax = plt.subplots(1, 2, figsize=(14, 7))
 
-    def reset(self, same_start):
+    def reset(self, same_start, predefined=False, scen_name=None):
         self.iteration = 0
         self.start_time = time.time()
         first_run = same_start and self.start_nodes is None
-        if first_run or not same_start:
+        if predefined:
+            self.start_nodes = get_edge_nodes('starts', scen_name, self.nodes_dict, path='../scens')
+            self.first_goal_nodes = get_edge_nodes('goals', scen_name, self.nodes_dict, path='../scens')
+        elif first_run or not same_start:
             self.start_nodes = random.sample(self.nodes, self.n_agents)
             # available_nodes = [node for node in self.nodes if node not in self.start_nodes]
             # self.first_goal_nodes = random.sample(available_nodes, self.n_agents)
@@ -258,10 +261,11 @@ def main():
     # Map
     # img_dir = 'empty-32-32.map'  # 32-32
     # img_dir = 'random-32-32-10.map'  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-    img_dir = 'random-32-32-20.map'  # 32-32
+    # img_dir = 'random-32-32-20.map'  # 32-32
     # img_dir = 'room-32-32-4.map'  # 32-32
     # img_dir = 'maze-32-32-2.map'  # 32-32
     # img_dir = 'den312d.map'  # 65-81
+    img_dir = 'tree.map'  # 32-32
 
     # For alg
     pass
@@ -296,7 +300,7 @@ def main():
 
     for i_problem in range(n_problems):
 
-        observations = env.reset(same_start=False)
+        observations = env.reset(same_start=False, predefined=True, scen_name='tree')
 
         # loop for algs
         # observations = env.reset(same_start=True)
@@ -313,6 +317,7 @@ def main():
             info['i_problem'] = i_problem
             info['i'] = i
             info['runtime'] = time.time() - start_time
+            info['alg_name'] = ''
             env.render(info)
 
             # unexpected termination
