@@ -125,8 +125,12 @@ def plot_env_field(ax, info):
     n_problems = info['n_problems']
     agents_names = info['agents_names']
     agents_names.sort()
-    orders_dict = info['orders_dict']
-    one_master = info['one_master']
+    sds_plot = 'orders_dict' in info
+    if sds_plot:
+        orders_dict = info['orders_dict']
+        one_master = info['one_master']
+    else:
+        one_master = info['i_agent']
     # one_master = 'agent_0'
 
     field = img_np * -1
@@ -139,16 +143,20 @@ def plot_env_field(ax, info):
         # if agent_name == one_master:
             a_x_list.append(curr_node.x)
             a_y_list.append(curr_node.y)
-            a_cm_list.append(get_color(orders_dict[agent_name]))
-            # a_cm_list.append('k')
+            if sds_plot:
+                a_cm_list.append(get_color(orders_dict[agent_name]))
+            else:
+                a_cm_list.append('k')
             next_goal_node = info[agent_name]['next_goal_node']
             g_x_list.append(next_goal_node.x)
             g_y_list.append(next_goal_node.y)
         else:
             others_y_list.append(curr_node.y)
             others_x_list.append(curr_node.x)
-            others_cm_list.append(get_color(orders_dict[agent_name]))
-            # others_cm_list.append(get_color(agents_names.index(agent_name)))
+            if sds_plot:
+                others_cm_list.append(get_color(orders_dict[agent_name]))
+            else:
+                others_cm_list.append(get_color(agents_names.index(agent_name)))
     ax.scatter(a_y_list, a_x_list, s=200, c='white')
     ax.scatter(a_y_list, a_x_list, s=100, c=np.array(a_cm_list))
     ax.scatter(g_y_list, g_x_list, s=200, c='white', marker='X')
@@ -159,7 +167,7 @@ def plot_env_field(ax, info):
 
     ax.imshow(field, origin='lower')
     ax.set_title(f'Map: {img_dir[:-4]}\n '
-                 f'{n_agents} agents, selected: {one_master.name} - {one_master.order}\n'
+                 f'{n_agents} agents'  # , selected: {one_master.name} - {one_master.order}\n
                  f'(run:{i_problem + 1}/{n_problems}, time: {curr_iteration + 1}/{iterations})')
 
 

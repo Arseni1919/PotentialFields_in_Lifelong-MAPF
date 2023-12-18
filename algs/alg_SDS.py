@@ -266,7 +266,7 @@ class SDSAgent(ParObsPFPrPAgent):
         # # ---------- memory part ---------- # #
         if len(h_agents) == 0:
             return None, None
-        max_plan_len = max([len(self.nei_plans_dict[agent.name]) for agent in h_agents])
+        max_plan_len = max([len(agent.plan) for agent in h_agents])
         self.memory *= 0.9
         norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
         norm_memory *= self.mem_weight
@@ -440,10 +440,10 @@ class AlgSDS(AlgParObsPFPrPSeq):
         for agent in self.agents:
             agent.a_names_in_conf_list_prev = agent.a_names_in_conf_list
             agent.a_names_in_conf_list = []
-            agent.nei_plans_dict = {nei.name: nei.plan for nei in agent.nei_list}
-            agent.nei_h_dict = {nei.name: nei.heuristic_value for nei in agent.nei_list}
-            agent.nei_pf_dict = {nei.name: nei.pf_field for nei in agent.nei_list}
-            agent.nei_succ_dict = {nei.name: nei.plan_succeeded for nei in agent.nei_list}
+            # agent.nei_plans_dict = {nei.name: nei.plan for nei in agent.nei_list}
+            # agent.nei_h_dict = {nei.name: nei.heuristic_value for nei in agent.nei_list}
+            # agent.nei_pf_dict = {nei.name: nei.pf_field for nei in agent.nei_list}
+            # agent.nei_succ_dict = {nei.name: nei.plan_succeeded for nei in agent.nei_list}
 
     def _all_replan(self, distr_time, inner_iter):
         parallel_times = [0]
@@ -504,7 +504,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=400,
+        n_agents=300,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
