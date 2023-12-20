@@ -230,9 +230,9 @@ class SDSAgent(ParObsPFPrPAgent):
                 continue
 
             # this one for the req_agent's lower teams
-            # if nei.name != req_agent.name and nei.name in req_agent.lower_agents_processed:
-            #     h_agents.append(nei)
-            #     continue
+            if nei.name != req_agent.name and nei.name in req_agent.lower_agents_processed:
+                h_agents.append(nei)
+                continue
 
         if not take_all:
             assert req_agent not in h_agents
@@ -471,7 +471,7 @@ def main():
     # Alg params
     # mem_weight = 1
     mem_weight = 2
-    h = 10
+    h = 5
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
@@ -506,7 +506,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=300,
+        n_agents=400,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -516,8 +516,8 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
