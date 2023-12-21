@@ -26,12 +26,13 @@ class SDSAgent(ParObsPFPrPAgent):
         self.has_conf = True
         self.mem_weight = self.params['mem_weight'] if 'mem_weight' in self.params else 0
         self.changed_path = True
+        self.roadmap = None
 
     def set_order(self, order):
         self.order = order
         self.order_init = order
 
-    def secondary_sds_init(self):
+    def secondary_init(self):
         self.a_names_in_conf_list = []
         self.lower_agents_processed = []
         self.plan = None
@@ -40,6 +41,12 @@ class SDSAgent(ParObsPFPrPAgent):
         self.changed_path = True
         # Decide who is your team leader, or be one
         self._set_team_leader()
+
+    def build_roadmap(self):
+        self.roadmap = np.ones(self.map_dim) * -1
+        curr_nei_nodes, curr_nei_nodes_dict = get_nei_nodes_times(self.curr_node, self.h, self.nodes_dict)
+        for nei_node in curr_nei_nodes:
+            self.roadmap[nei_node.x, nei_node.y] = nei_node.t
 
     def replan(self, inner_iter):
         if self.plan and len(self.a_names_in_conf_list) == 0:
@@ -289,20 +296,20 @@ class AlgSDS(AlgParObsPFPrPSeq):
             return self._get_info_to_send()
         distr_time = 0
 
-        self._all_set_order(to_shuffle=False)  # set the masters
+        self._all_shuffle_and_set_order(to_shuffle=False)  # set the masters + build a global order
 
-        time_limit_crossed, distr_time = self._all_secondary_sds_init(distr_time)
+        # set the team leaders
+        time_limit_crossed, distr_time = self._all_secondary_init(distr_time)
         if time_limit_crossed:
             return self._get_info_to_send()
 
         # build (numpy) roadmaps
-        pass
-
-        # build an order
-        pass
+        time_limit_crossed, distr_time = self._all_build_roadmap(distr_time)
+        if time_limit_crossed:
+            return self._get_info_to_send()
 
         # build last resort locations in the roadmaps
-        pass
+        self._reserve_last_resort_locations()
 
         # build paths while adjusting to the team leader
         pass
@@ -312,26 +319,6 @@ class AlgSDS(AlgParObsPFPrPSeq):
         assert there_are_collisions
 
         return self._get_info_to_send()
-
-    def _all_set_order(self, to_shuffle=True):
-        # random.shuffle(self.agents)
-        final_list = [a for a in self.agents if not a.plan_succeeded]
-        succ_list = [a for a in self.agents if a.plan_succeeded]
-        others_list = [a for a in succ_list if a.time_passed_from_last_goal > self.h+1]
-        if to_shuffle:
-            random.shuffle(others_list)
-        # choose i_agent
-        reached_list = [a for a in succ_list if a.time_passed_from_last_goal <= self.h+1]
-        if to_shuffle:
-            random.shuffle(reached_list)
-        final_list.extend(others_list)
-        if len(others_list) > 0 and self.i_agent not in final_list:
-            self.i_agent = others_list[0]
-        final_list.extend(reached_list)
-
-        self.agents = final_list
-        for i, agent in enumerate(self.agents):
-            agent.set_order(i)
 
     def _get_info_to_send(self):
         orders_dict = {}
@@ -343,13 +330,56 @@ class AlgSDS(AlgParObsPFPrPSeq):
         info_to_send = {'orders_dict': orders_dict, 'one_master': self.i_agent}
         return info_to_send
 
-    def _all_secondary_sds_init(self, distr_time):
+    def _all_shuffle_and_set_order(self, to_shuffle=True):
+        self._all_shuffle(to_shuffle)
+        self._all_set_order()
+
+    def _all_shuffle(self, to_shuffle=True):
+        # random.shuffle(self.agents)
+        final_list = [a for a in self.agents if not a.plan_succeeded]
+        succ_list = [a for a in self.agents if a.plan_succeeded]
+        others_list = [a for a in succ_list if a.time_passed_from_last_goal > self.h + 1]
+        if to_shuffle:
+            random.shuffle(others_list)
+        # choose i_agent
+        reached_list = [a for a in succ_list if a.time_passed_from_last_goal <= self.h + 1]
+        if to_shuffle:
+            random.shuffle(reached_list)
+        final_list.extend(others_list)
+        if len(others_list) > 0 and self.i_agent not in final_list:
+            self.i_agent = others_list[0]
+        final_list.extend(reached_list)
+        self.agents = final_list
+
+    def _all_set_order(self):
+        u_leader = self.agents[0]
+        u_leader.set_order(0)
+        pos_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents[1:]}
+        i = 1
+        nei_nodes_dict = {}
+        open_list = [u_leader.curr_node]
+        while len(open_list) > 0:
+            i_node = open_list.pop()
+            nei_nodes_dict[i_node.xy_name] = i_node
+            neighbours = i_node.neighbours
+            random.shuffle(neighbours)
+            for node_nei_name in neighbours:
+                if node_nei_name not in nei_nodes_dict:
+                    node_nei = self.nodes_dict[node_nei_name]
+                    open_list.append(node_nei)
+                    if node_nei_name in pos_to_agent_dict:
+                        nei_agent = pos_to_agent_dict[node_nei_name]
+                        nei_agent.set_order(i)
+                        i += 1
+        self.agents.sort(key=lambda x: x.order_init)
+
+    def _all_secondary_init(self, distr_time):
         parallel_times = [0]
         for i, agent in enumerate(self.agents):
 
             local_start_time = time.time()
 
-            agent.secondary_sds_init()
+            agent.secondary_init()
 
             # limit check
             passed_time = time.time() - local_start_time
@@ -359,6 +389,27 @@ class AlgSDS(AlgParObsPFPrPSeq):
                 return True, distr_time + max(parallel_times)
 
         return False, distr_time + max(parallel_times)
+
+    def _all_build_roadmap(self, distr_time):
+        parallel_times = [0]
+        for i, agent in enumerate(self.agents):
+
+            local_start_time = time.time()
+
+            agent.build_roadmap()
+
+            # limit check
+            passed_time = time.time() - local_start_time
+            parallel_times.append(passed_time)
+            if distr_time + passed_time > self.time_to_think_limit:
+                self._cut_up_to_the_limit(i)
+                return True, distr_time + max(parallel_times)
+
+        return False, distr_time + max(parallel_times)
+
+    def _reserve_last_resort_locations(self):
+        for agent in reversed(self.agents):
+            pass
 
     def _all_find_conf_agents(self, distr_time, inner_iter):
         there_are_collisions, n_collisions = False, 0

@@ -218,6 +218,24 @@ def get_nei_nodes(curr_node, nei_r, nodes_dict):
     return nei_nodes, nei_nodes_dict
 
 
+def get_nei_nodes_times(curr_node, nei_r, nodes_dict):
+    nei_nodes_dict = {}
+    curr_node.t = 0
+    open_list = [curr_node]
+    while len(open_list) > 0:
+        i_node = open_list.pop()
+        i_node_distance = euclidean_distance_nodes(curr_node, i_node)
+        if i_node_distance <= nei_r:
+            nei_nodes_dict[i_node.xy_name] = i_node
+            for node_nei_name in i_node.neighbours:
+                if node_nei_name not in nei_nodes_dict:
+                    node_nei = nodes_dict[node_nei_name]
+                    node_nei.t = i_node.t + 1
+                    open_list.append(node_nei)
+    nei_nodes = list(nei_nodes_dict.values())
+    return nei_nodes, nei_nodes_dict
+
+
 @lru_cache(maxsize=128)
 def euclidean_distance_nodes(node1, node2):
     # p = [node1.x, node1.y]

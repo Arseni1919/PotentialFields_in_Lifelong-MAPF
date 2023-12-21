@@ -1,3 +1,4 @@
-a =  99 % 100
-
+a = ["foo", "bar", "baz"]
+for i in reversed(a):
+    print(i)
 print(a)
