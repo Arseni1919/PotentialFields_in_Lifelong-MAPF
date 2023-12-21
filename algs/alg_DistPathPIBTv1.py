@@ -65,8 +65,8 @@ class SDSAgent(ParObsPFPrPAgent):
 
     def _set_team_leader(self):
         orders_around = {nei.order_init: nei for nei in self.nei_list}
-        min_order = min(orders_around.keys())
-        if self.order_init < min_order:
+        min_order = min(orders_around.keys()) if len(orders_around) > 0 else self.order
+        if self.order_init <= min_order:
             # I am the leader
             self.team_leader = self
         else:

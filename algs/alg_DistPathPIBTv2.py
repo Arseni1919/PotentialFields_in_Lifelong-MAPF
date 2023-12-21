@@ -32,6 +32,7 @@ class SDSAgent(ParObsPFPrPAgent):
         self.order_init = order
 
     def secondary_sds_init(self):
+        self.a_names_in_conf_list = []
         self.lower_agents_processed = []
         self.plan = None
         self.plan_succeeded = True
@@ -53,8 +54,8 @@ class SDSAgent(ParObsPFPrPAgent):
 
     def _set_team_leader(self):
         orders_around = {nei.order_init: nei for nei in self.nei_list}
-        min_order = min(orders_around.keys())
-        if self.order_init < min_order:
+        min_order = min(orders_around.keys()) if len(orders_around) > 0 else self.order
+        if self.order_init <= min_order:
             # I am the leader
             self.team_leader = self
         else:
@@ -288,7 +289,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
             return self._get_info_to_send()
         distr_time = 0
 
-        self._sds_shuffle()  # set the masters
+        self._all_set_order(to_shuffle=False)  # set the masters
 
         time_limit_crossed, distr_time = self._all_secondary_sds_init(distr_time)
         if time_limit_crossed:
@@ -312,15 +313,17 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
         return self._get_info_to_send()
 
-    def _sds_shuffle(self):
+    def _all_set_order(self, to_shuffle=True):
         # random.shuffle(self.agents)
         final_list = [a for a in self.agents if not a.plan_succeeded]
         succ_list = [a for a in self.agents if a.plan_succeeded]
         others_list = [a for a in succ_list if a.time_passed_from_last_goal > self.h+1]
-        random.shuffle(others_list)
+        if to_shuffle:
+            random.shuffle(others_list)
         # choose i_agent
         reached_list = [a for a in succ_list if a.time_passed_from_last_goal <= self.h+1]
-        random.shuffle(reached_list)
+        if to_shuffle:
+            random.shuffle(reached_list)
         final_list.extend(others_list)
         if len(others_list) > 0 and self.i_agent not in final_list:
             self.i_agent = others_list[0]
@@ -385,11 +388,6 @@ class AlgSDS(AlgParObsPFPrPSeq):
             agent2.changed_path = False
         print(f'\r>>>> {inner_iter=}, {n_collisions} collisions, last one: {col_str}', end='')
         return there_are_collisions, distr_time
-
-    def _all_exchange_plans(self):
-        for agent in self.agents:
-            agent.a_names_in_conf_list_prev = agent.a_names_in_conf_list
-            agent.a_names_in_conf_list = []
 
     def _all_replan(self, distr_time, inner_iter):
         parallel_times = [0]
