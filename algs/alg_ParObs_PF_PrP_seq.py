@@ -77,13 +77,15 @@ class ParObsPFPrPAgent:
 
     def build_plan(self, h_agents, goal=None):
         # self._execute_a_star(h_agents)
+        if h_agents is None:
+            h_agents = []
+        if goal is None:
+            goal = self.next_goal_node
         if self.plan is None or len(self.plan) == 0:
             nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
             sub_results = create_sub_results(nei_h_agents)
             v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
             nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
-            if goal is None:
-                goal = self.next_goal_node
             self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs, goal=goal)
         return self.plan
 

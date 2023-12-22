@@ -20,251 +20,22 @@ class SDSAgent(ParObsPFPrPAgent):
         self.lower_agents_processed = []
         self.higher_agents_processed_prev = []
         self.order = None
-        self.order_init = None
         self.team_leader = None
         self.team_queue = []
         self.has_conf = True
-        self.mem_weight = self.params['mem_weight'] if 'mem_weight' in self.params else 0
-        self.changed_path = True
-        self.roadmap = None
 
     def set_order(self, order):
         self.order = order
-        self.order_init = order
 
     def secondary_init(self):
         self.a_names_in_conf_list = []
         self.lower_agents_processed = []
         self.plan = None
         self.plan_succeeded = True
-        self.has_conf = True
-        self.changed_path = True
-        # Decide who is your team leader, or be one
-        self._set_team_leader()
 
-    def build_roadmap(self):
-        self.roadmap = np.ones(self.map_dim) * -1
-        curr_nei_nodes, curr_nei_nodes_dict = get_nei_nodes_times(self.curr_node, self.h, self.nodes_dict)
-        for nei_node in curr_nei_nodes:
-            self.roadmap[nei_node.x, nei_node.y] = nei_node.t
-
-    def replan(self, inner_iter):
-        if self.plan and len(self.a_names_in_conf_list) == 0:
-            self.has_conf = False
-            return
-        i_am_the_highest, lower_a = self._set_i_am_the_highest()
-        if i_am_the_highest:
-            self._H_policy(lower_a)
-        return
-        # self.set_istay()
-        # return
-
-    def _set_team_leader(self):
-        orders_around = {nei.order_init: nei for nei in self.nei_list}
-        min_order = min(orders_around.keys()) if len(orders_around) > 0 else self.order
-        if self.order_init <= min_order:
-            # I am the leader
-            self.team_leader = self
-        else:
-            # The leader is somebody else
-            self.team_leader = orders_around[min_order]
-            self.order = min_order
-        self.team_queue = [self.name]
-
-    def _avoid_standing_agents(self):
-        # if it is possible to avoid the standing agents - better
-        last_target = self.plan[-1]
-        init_plan = self.plan
-        l_agents = []
-        for nei in self.nei_list:
-            if check_stay_at_same_node(nei.plan, nei.curr_node):
-                l_agents.append(nei)
-                continue
-        self.build_plan(h_agents=l_agents, goal=last_target)
-        if self.plan[-1].xy_name != last_target.xy_name:
-            self.plan = init_plan
-            self.plan_succeeded = True
-            self._fulfill_the_plan()
-            self._create_pf_field()
-
-    def _avoid_nei_pfs(self):
-        v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, {})
-        h_agents = []
-        for nei in self.nei_list:
-            if nei.order < self.order:
-                h_agents.append(nei)
-        nei_pfs, max_plan_len = self._build_nei_pfs(h_agents)
-        self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs)
-
-    def _set_i_am_the_highest(self):
-        # There is conf already
-        # I am stuck
-        if not self.plan_succeeded:
-            return False, None
-
-        self.a_names_in_conf_list.sort(key=lambda x: x[1])
-        first_conf_name, first_conf_dist = self.a_names_in_conf_list[0]
-        first_conf_agent = self.nei_dict[first_conf_name]
-
-        # another agent from the higher team
-        if first_conf_agent.order < self.order:
-            return False, None
-
-        # another agent from the lower team
-        if first_conf_agent.order > self.order:
-            # no need to fill some team queues
-            return True, first_conf_agent
-
-        if not first_conf_agent.plan_succeeded:
-            return True, first_conf_agent
-
-        # check if all the agents that before me in the queue finished
-        team_queue = self.team_leader.team_queue
-        if self.name in team_queue:  # my name is in queue
-            # check if all above me did not finish
-            my_q_num = team_queue.index(self.name)
-            for q_name in team_queue[:my_q_num]:
-                if q_name in self.nei_dict:
-                    nei = self.nei_dict[q_name]
-                    if nei.plan_succeeded and nei.has_conf:
-                        return False, None
-        else:  # my name is not in queue
-            # check if all in the queue did not finish
-            for q_name in team_queue:
-                if q_name in self.nei_dict:
-                    nei = self.nei_dict[q_name]
-                    if nei.plan_succeeded and nei.has_conf:
-                        return False, None
-            # from the same team and different order_init
-            for nei in self.nei_list:
-                if nei.order_init < self.order_init:
-                    if nei.plan_succeeded and nei.has_conf:
-                        return False, None
-            self.team_leader.team_queue.append(self.name)
-        self.team_leader.team_queue.append(first_conf_agent.name)
-        return True, first_conf_agent
-
-    def _H_policy(self, lower_a):
-
-        # if L is not idle send request
-        if lower_a.plan_succeeded:
-            to_continue = lower_a.L_policy(self)
-            if self.order < lower_a.order:
-                self.lower_agents_processed.append(lower_a.name)
-            if not to_continue:
-                return
-
-        # after receiving alt plan
-        h_agents = []
-        for nei in self.nei_list:
-
-            # idle agents
-            if not nei.plan_succeeded:
-                h_agents.append(nei)
-                continue
-
-            # H + L agents
-            if nei.name in self.team_leader.team_queue:
-                h_agents.append(nei)
-                continue
-
-            # consider all the higher teams
-            if nei.team_leader.order_init < self.team_leader.order_init:
-                h_agents.append(nei)
-                continue
-
-            # this one for the agents from the lower teams
-            if nei.name in self.lower_agents_processed:
-                h_agents.append(nei)
-                continue
-
+    def dppibt_build_plan(self, h_agents=None, goal=None):
         self.plan = None
-        self.build_plan(h_agents)
-        self.changed_path = True
-        return
-
-    def L_policy(self, req_agent):
-        assert req_agent.name != self.name
-
-        # try to consider H agent that sent the request
-        prev_last_node = self.plan[-1]
-        self._L_policy_build_plans(req_agent, prev_last_node=prev_last_node, take_all=True)
-        if self.plan_succeeded and self.plan[-1].xy_name == prev_last_node.xy_name:
-            return False
-
-        # ignore the H agent that sent the request
-        self._L_policy_build_plans(req_agent, take_all=False)
-        return True
-
-    def _L_policy_build_plans(self, req_agent, prev_last_node=None, take_all=False):
-        h_agents = []
-        for nei in self.nei_list:
-
-            if take_all:
-                h_agents.append(nei)
-                continue
-
-            # idle agents
-            if not nei.plan_succeeded:
-                h_agents.append(nei)
-                continue
-
-            # H + L agents
-            if nei.name != req_agent.name and nei.name in self.team_leader.team_queue:
-                h_agents.append(nei)
-                continue
-
-            # consider all the higher teams
-            if nei.name != req_agent.name and nei.team_leader.order_init < self.team_leader.order_init:
-                h_agents.append(nei)
-                continue
-
-            # this one for the req_agent's lower teams
-            # if nei.name != req_agent.name and nei.name in req_agent.lower_agents_processed:
-            #     h_agents.append(nei)
-            #     continue
-
-        if not take_all:
-            assert req_agent not in h_agents
-
-        nei_nodes, nei_nodes_dict = get_nei_nodes(self.curr_node, self.h, self.nodes_dict)
-        if prev_last_node:
-            rand_goal_node = prev_last_node
-        elif self.curr_node.xy_name != self.next_goal_node.xy_name and self.next_goal_node.xy_name in nei_nodes_dict:
-            # rand_goal_node = self.next_goal_node
-            nei_t_nodes, nei_t_nodes_dict = get_nei_nodes(self.next_goal_node, self.h, self.nodes_dict)
-            nei_nodes = list(filter(lambda n: n.xy_name in nei_t_nodes_dict, nei_nodes))
-            rand_goal_node = random.choice(nei_nodes) if len(nei_nodes) != 0 else self.curr_node
-        else:
-            # h_agents_node_names = []
-            h_agents_node_names = [nei.curr_node.xy_name for nei in h_agents]
-            # h_agents_node_names.extend([nei.plan[-1].xy_name for nei in h_agents])
-            h_agents_node_names.extend([node.xy_name for node in req_agent.plan])
-            # h_agents_node_names.extend(self.curr_node.neighbours)
-            h_agents_node_names = list(set(h_agents_node_names))
-            nei_nodes = list(filter(lambda n: n.xy_name not in h_agents_node_names, nei_nodes))
-            rand_goal_node = random.choice(nei_nodes) if len(nei_nodes) != 0 else self.curr_node
-
-        self.plan = None
-        self.build_plan(h_agents, goal=rand_goal_node)
-        self.changed_path = True
-
-    # # POTENTIAL FIELDS ****************************** pf_weight ******************************
-    def _build_nei_pfs(self, h_agents):
-        if self.mem_weight == 0:
-            self.nei_pfs = None
-            return None, None
-
-        # # ---------- memory part ---------- # #
-        if len(h_agents) == 0:
-            return None, None
-        max_plan_len = max([len(agent.plan) for agent in h_agents])
-        self.memory *= 0.9
-        norm_memory = np.repeat(self.memory[:, :, np.newaxis], max_plan_len, axis=2)
-        norm_memory *= self.mem_weight
-        # print(norm_memory)
-        self.nei_pfs = norm_memory
-        return norm_memory, max_plan_len
+        self.build_plan(h_agents, goal=goal)
 
 
 class AlgSDS(AlgParObsPFPrPSeq):
@@ -276,6 +47,8 @@ class AlgSDS(AlgParObsPFPrPSeq):
     """
     def __init__(self, params, alg_name):
         super().__init__(params, alg_name)
+        self.agents_names = []
+        self.u_leader = None
 
     def reset(self):
         self.agents: List[SDSAgent] = []
@@ -296,27 +69,28 @@ class AlgSDS(AlgParObsPFPrPSeq):
             return self._get_info_to_send()
         distr_time = 0
 
-        self._all_shuffle_and_set_order(to_shuffle=False)  # set the masters + build a global order
+        # set the masters + build a global order
+        self._all_shuffle(to_shuffle=False)
+        # self._all_shuffle(to_shuffle=True)
+        self._all_set_order()
 
         # set the team leaders
         time_limit_crossed, distr_time = self._all_secondary_init(distr_time)
         if time_limit_crossed:
             return self._get_info_to_send()
 
-        # build (numpy) roadmaps
-        time_limit_crossed, distr_time = self._all_build_roadmap(distr_time)
-        if time_limit_crossed:
-            return self._get_info_to_send()
+        # build initial leader's path
+        self.u_leader.dppibt_build_plan()
 
-        # build last resort locations in the roadmaps
-        self._reserve_last_resort_locations()
+        # find free locations
+        to_continue, infected_agents, free_nodes_to_fill = self._find_free_spots()
 
-        # build paths while adjusting to the team leader
-        pass
+        if to_continue:
+            self._plan_ways_aside(infected_agents, free_nodes_to_fill)
 
         # find collisions
-        there_are_collisions, distr_time = self._all_find_conf_agents(distr_time, -1)
-        assert there_are_collisions
+        there_are_collisions, distr_time = self._all_find_conf_agents(distr_time)
+        assert not there_are_collisions
 
         return self._get_info_to_send()
 
@@ -330,34 +104,28 @@ class AlgSDS(AlgParObsPFPrPSeq):
         info_to_send = {'orders_dict': orders_dict, 'one_master': self.i_agent}
         return info_to_send
 
-    def _all_shuffle_and_set_order(self, to_shuffle=True):
-        self._all_shuffle(to_shuffle)
-        self._all_set_order()
-
     def _all_shuffle(self, to_shuffle=True):
-        # random.shuffle(self.agents)
-        final_list = [a for a in self.agents if not a.plan_succeeded]
-        succ_list = [a for a in self.agents if a.plan_succeeded]
-        others_list = [a for a in succ_list if a.time_passed_from_last_goal > self.h + 1]
+        unsucc_list = [a for a in self.agents if a.curr_node.xy_name != a.next_goal_node.xy_name]
+        succ_list = [a for a in self.agents if a.curr_node.xy_name == a.next_goal_node.xy_name]
         if to_shuffle:
-            random.shuffle(others_list)
-        # choose i_agent
-        reached_list = [a for a in succ_list if a.time_passed_from_last_goal <= self.h + 1]
-        if to_shuffle:
-            random.shuffle(reached_list)
-        final_list.extend(others_list)
-        if len(others_list) > 0 and self.i_agent not in final_list:
-            self.i_agent = others_list[0]
-        final_list.extend(reached_list)
-        self.agents = final_list
+            random.shuffle(unsucc_list)
+            random.shuffle(succ_list)
+        unsucc_list.extend(succ_list)
+        # if len(unsucc_list) > 0 and self.i_agent not in unsucc_list:
+        #     self.i_agent = unsucc_list[0]
+        self.agents = unsucc_list
+        self.u_leader = self.agents[0]
+        self.i_agent = self.u_leader
+        self.agents_names = [a.name for a in self.agents]
 
     def _all_set_order(self):
-        u_leader = self.agents[0]
-        u_leader.set_order(0)
+        for i, agent in enumerate(self.agents):
+            agent.set_order(i)
+        self.u_leader.set_order(0)
         pos_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents[1:]}
         i = 1
         nei_nodes_dict = {}
-        open_list = [u_leader.curr_node]
+        open_list = [self.u_leader.curr_node]
         while len(open_list) > 0:
             i_node = open_list.pop()
             nei_nodes_dict[i_node.xy_name] = i_node
@@ -371,7 +139,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
                         nei_agent = pos_to_agent_dict[node_nei_name]
                         nei_agent.set_order(i)
                         i += 1
-        self.agents.sort(key=lambda x: x.order_init)
+        self.agents.sort(key=lambda x: x.order)
 
     def _all_secondary_init(self, distr_time):
         parallel_times = [0]
@@ -390,73 +158,86 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
         return False, distr_time + max(parallel_times)
 
-    def _all_build_roadmap(self, distr_time):
-        parallel_times = [0]
-        for i, agent in enumerate(self.agents):
+    def _find_free_spots(self):
+        node_name_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents[1:]}
+        node_name_of_agents = list(node_name_to_agent_dict.keys())
+        node_names_of_plan = [n.xy_name for n in self.u_leader.plan]
+        assert self.u_leader.curr_node.xy_name not in node_name_to_agent_dict
+        conflicts = np.intersect1d(node_name_of_agents, node_names_of_plan)
+        n_of_conflicts = len(conflicts)
 
-            local_start_time = time.time()
+        if n_of_conflicts == 0:
+            # all stay on place
+            for a in self.agents[1:]:
+                a.dppibt_build_plan(goal=a.curr_node)
+            return False, None, None
 
-            agent.build_roadmap()
+        closed_node_names = [self.u_leader.curr_node.xy_name]
+        nodes_to_open = self.u_leader.plan[:]
+        closed_node_names.extend(node_names_of_plan)
+        free_nodes_to_fill = []
+        infected_agents = [node_name_to_agent_dict[c] for c in conflicts]
+        while len(nodes_to_open) > 0:
+            next_node = nodes_to_open.pop(0)
+            closed_node_names.append(next_node.xy_name)
 
-            # limit check
-            passed_time = time.time() - local_start_time
-            parallel_times.append(passed_time)
-            if distr_time + passed_time > self.time_to_think_limit:
-                self._cut_up_to_the_limit(i)
-                return True, distr_time + max(parallel_times)
+            for nei_name in next_node.neighbours:
+                if nei_name in closed_node_names:
+                    continue
+                curr_node = self.nodes_dict[nei_name]
+                if nei_name in node_name_to_agent_dict:
+                    nei_agent = node_name_to_agent_dict[nei_name]
+                    if nei_agent not in infected_agents:
+                        infected_agents.append(nei_agent)
+                    # n_of_conflicts += 1
+                else:
+                    free_nodes_to_fill.append(curr_node)
+                    if len(free_nodes_to_fill) == n_of_conflicts:
+                        return True, infected_agents, free_nodes_to_fill
+                nodes_to_open.append(curr_node)
 
-        return False, distr_time + max(parallel_times)
+        # all stay on place
+        for a in self.agents:
+            a.dppibt_build_plan(goal=a.curr_node)
+        return False, None, None
 
-    def _reserve_last_resort_locations(self):
-        for agent in reversed(self.agents):
-            pass
+    def _plan_ways_aside(self, infected_agents, free_nodes_to_fill):
+        # h_func(from_node, to_node)
+        h_agents = []
+        for a in self.agents[1:]:
+            if a not in infected_agents:
+                a.dppibt_build_plan(goal=a.curr_node)
+                h_agents.append(a)
+        node_names_of_plan = list(set([n.xy_name for n in self.u_leader.plan]))
+        while len(free_nodes_to_fill) > 0:
+            free_nodes_to_fill.sort(key=lambda n: self.h_func(self.u_leader.curr_node, n), reverse=True)
+            next_node = free_nodes_to_fill.pop(0)
+            infected_agents.sort(key=lambda a: self.h_func(a.curr_node, next_node))
+            nearest_agent = infected_agents.pop(0)
+            if nearest_agent.curr_node.xy_name not in node_names_of_plan:
+                free_nodes_to_fill.append(nearest_agent.curr_node)
+            nearest_agent.dppibt_build_plan(h_agents=h_agents, goal=next_node)
+            assert nearest_agent.plan_succeeded
+            h_agents.append(nearest_agent)
+        self.u_leader.dppibt_build_plan(h_agents=h_agents)
 
-    def _all_find_conf_agents(self, distr_time, inner_iter):
+    def _all_find_conf_agents(self, distr_time):
         there_are_collisions, n_collisions = False, 0
         col_str = ''
         for agent1, agent2 in combinations(self.agents, 2):
             if agent1.name not in agent2.nei_dict:
                 continue
-            if not agent1.changed_path and not agent2.changed_path:
-                the_conf = list(filter(lambda x: x[0] == agent2.name, agent1.a_names_in_conf_list_prev))
-                if len(the_conf) == 0:
-                    have_confs = False
-                else:
-                    have_confs = True
-                    conf_index = the_conf[0][1]
-            else:
-                plan1 = agent1.get_full_plan()
-                plan2 = agent2.get_full_plan()
-                have_confs, conf_index = two_plans_have_confs_at(plan1, plan2)
+            plan1 = agent1.get_full_plan()
+            plan2 = agent2.get_full_plan()
+            have_confs, conf_index = two_plans_have_confs_at(plan1, plan2)
             if have_confs:
                 there_are_collisions = True
                 agent1.a_names_in_conf_list.append((agent2.name, conf_index))
                 agent2.a_names_in_conf_list.append((agent1.name, conf_index))
                 n_collisions += 1
                 col_str = f'{agent1.name} <-> {agent2.name}'
-        for agent1, agent2 in combinations(self.agents, 2):
-            agent1.changed_path = False
-            agent2.changed_path = False
-        print(f'\r>>>> {inner_iter=}, {n_collisions} collisions, last one: {col_str}', end='')
+        print(f'\r>>>> {self.curr_iteration=}, {n_collisions} collisions, last one: {col_str}', end='')
         return there_are_collisions, distr_time
-
-    def _all_replan(self, distr_time, inner_iter):
-        parallel_times = [0]
-        for i, agent in enumerate(self.agents):
-
-            local_start_time = time.time()
-
-            # EACH AGENT:
-            agent.replan(inner_iter=inner_iter)
-
-            # limit check
-            passed_time = time.time() - local_start_time
-            parallel_times.append(passed_time)
-            if distr_time + passed_time > self.time_to_think_limit:
-                self._cut_up_to_the_limit(i)
-                return True, distr_time + max(parallel_times)
-
-        return False, distr_time + max(parallel_times)
 
 
 @use_profiler(save_dir='../stats/alg_dppibt_v2.pstat')
@@ -464,7 +245,7 @@ def main():
     # Alg params
     # mem_weight = 1
     mem_weight = 2
-    h = 10
+    h = 5
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
@@ -489,6 +270,7 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
+        # PLOT_RATE=0.5,
         PLOT_FROM=1,
         middle_plot=True,
         # middle_plot=False,

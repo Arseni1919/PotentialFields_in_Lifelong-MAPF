@@ -154,45 +154,6 @@ class SDSAgent(ParObsPFPrPAgent):
         self.team_leader.team_queue.append(first_conf_agent.name)
         return True, first_conf_agent
 
-    def _H_policy(self, lower_a):
-
-        # if L is not idle send request
-        if lower_a.plan_succeeded:
-            to_continue = lower_a.L_policy(self)
-            if self.order < lower_a.order:
-                self.lower_agents_processed.append(lower_a.name)
-            if not to_continue:
-                return
-
-        # after receiving alt plan
-        h_agents = []
-        for nei in self.nei_list:
-
-            # idle agents
-            if not nei.plan_succeeded:
-                h_agents.append(nei)
-                continue
-
-            # H + L agents
-            if nei.name in self.team_leader.team_queue:
-                h_agents.append(nei)
-                continue
-
-            # consider all the higher teams
-            if nei.team_leader.order_init < self.team_leader.order_init:
-                h_agents.append(nei)
-                continue
-
-            # this one for the agents from the lower teams
-            if nei.name in self.lower_agents_processed:
-                h_agents.append(nei)
-                continue
-
-        self.plan = None
-        self.build_plan(h_agents)
-        self.changed_path = True
-        return
-
     def L_policy(self, req_agent):
         assert req_agent.name != self.name
 
@@ -471,7 +432,7 @@ def main():
     # Alg params
     # mem_weight = 1
     mem_weight = 2
-    h = 5
+    h = 10
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
@@ -496,6 +457,7 @@ def main():
         PLOT_PER=1,
         # PLOT_PER=20,
         PLOT_RATE=0.001,
+        # PLOT_RATE=5,
         PLOT_FROM=1,
         middle_plot=True,
         # middle_plot=False,
