@@ -47,6 +47,9 @@ def get_node(successor_xy_name, node_current, nodes, nodes_dict, open_nodes, clo
             return None, ''
     new_t = node_current.t + 1
 
+    if successor_xy_name not in nodes_dict:
+        return None, ''
+
     if v_constr_dict:
         if new_t in v_constr_dict[successor_xy_name]:
             return None, ''

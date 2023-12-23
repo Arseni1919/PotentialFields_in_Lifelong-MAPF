@@ -88,7 +88,7 @@ class SDSAgent(ParObsPFPrPAgent):
         if self.plan[-1].xy_name != last_target.xy_name:
             self.plan = init_plan
             self.plan_succeeded = True
-            self._fulfill_the_plan()
+            self.fulfill_the_plan()
             self._create_pf_field()
 
     def _avoid_nei_pfs(self):

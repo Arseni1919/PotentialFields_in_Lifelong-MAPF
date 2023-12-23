@@ -75,18 +75,17 @@ class ParObsPFPrPAgent:
         self.nei_pf_dict[nei_agent.name] = None  # in the _all_exchange_plans method
         self.nei_succ_dict[nei_agent.name] = None  # in the _all_exchange_plans method
 
-    def build_plan(self, h_agents, goal=None):
+    def build_plan(self, h_agents, goal=None, nodes=None, nodes_dict=None):
         # self._execute_a_star(h_agents)
         if h_agents is None:
             h_agents = []
-        if goal is None:
-            goal = self.next_goal_node
         if self.plan is None or len(self.plan) == 0:
             nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
             sub_results = create_sub_results(nei_h_agents)
             v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
             nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
-            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs, goal=goal)
+            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs,
+                                goal=goal, nodes=nodes, nodes_dict=nodes_dict)
         return self.plan
 
     def correct_nei_pfs(self):
@@ -214,12 +213,14 @@ class ParObsPFPrPAgent:
         # plot_magnet_field(self.magnet_field)
 
     def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs,
-                       goal=None):
+                       goal=None, nodes=None, nodes_dict=None):
         if goal is None:
             goal = self.next_goal_node
+        if nodes is None or nodes_dict is None:
+            nodes, nodes_dict = self.nodes, self.nodes_dict
         # v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = self._create_constraints(h_agents)
         new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=goal,
-                                        nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func,
+                                        nodes=nodes, nodes_dict=nodes_dict, h_func=self.h_func,
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
                                         agent_name=self.name,
@@ -229,14 +230,14 @@ class ParObsPFPrPAgent:
             self.plan_succeeded = True
             new_plan.pop(0)
             self.plan = new_plan
-            self._fulfill_the_plan()
+            self.fulfill_the_plan()
             self._create_pf_field()
         else:
             # self.plan = None
             # IStay
             self.set_istay()
 
-    def _fulfill_the_plan(self):
+    def fulfill_the_plan(self):
         if len(self.plan) == 0:
             self.plan = [self.curr_node]
         if self.h and self.h < 1000:
@@ -245,7 +246,7 @@ class ParObsPFPrPAgent:
 
     def set_istay(self):
         self.plan = [self.curr_node]
-        self._fulfill_the_plan()
+        self.fulfill_the_plan()
         self._create_pf_field()
         self.plan_succeeded = False
         # print(f' \r\t --- [{self.name}]: I stay!', end='')

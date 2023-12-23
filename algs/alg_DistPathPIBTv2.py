@@ -26,16 +26,14 @@ class SDSAgent(ParObsPFPrPAgent):
 
     def set_order(self, order):
         self.order = order
-
-    def secondary_init(self):
         self.a_names_in_conf_list = []
         self.lower_agents_processed = []
         self.plan = None
         self.plan_succeeded = True
 
-    def dppibt_build_plan(self, h_agents=None, goal=None):
+    def dppibt_build_plan(self, h_agents=None, goal=None, nodes=None, nodes_dict=None):
         self.plan = None
-        self.build_plan(h_agents, goal=goal)
+        self.build_plan(h_agents, goal=goal, nodes=nodes, nodes_dict=nodes_dict)
 
 
 class AlgSDS(AlgParObsPFPrPSeq):
@@ -67,29 +65,24 @@ class AlgSDS(AlgParObsPFPrPSeq):
         # one_master = [agent for agent in self.agents if agent.master == agent.master_init][0]
         if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
             return self._get_info_to_send()
-        distr_time = 0
 
         # set the masters + build a global order
         self._all_shuffle(to_shuffle=False)
         # self._all_shuffle(to_shuffle=True)
         self._all_set_order()
 
-        # set the team leaders
-        time_limit_crossed, distr_time = self._all_secondary_init(distr_time)
-        if time_limit_crossed:
-            return self._get_info_to_send()
-
         # build initial leader's path
         self.u_leader.dppibt_build_plan()
 
         # find free locations
-        to_continue, infected_agents, free_nodes_to_fill = self._find_free_spots()
+        to_continue, infected_agents, free_nodes_to_fill, directed_graph = self._find_free_spots()
 
+        # if there are agents on the track and the plan is possible
         if to_continue:
-            self._plan_ways_aside(infected_agents, free_nodes_to_fill)
+            self._plan_ways_aside(infected_agents, free_nodes_to_fill, directed_graph)
 
         # find collisions
-        there_are_collisions, distr_time = self._all_find_conf_agents(distr_time)
+        there_are_collisions = self._all_find_conf_agents()
         assert not there_are_collisions
 
         return self._get_info_to_send()
@@ -121,107 +114,154 @@ class AlgSDS(AlgParObsPFPrPSeq):
     def _all_set_order(self):
         for i, agent in enumerate(self.agents):
             agent.set_order(i)
-        self.u_leader.set_order(0)
-        pos_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents[1:]}
-        i = 1
-        nei_nodes_dict = {}
-        open_list = [self.u_leader.curr_node]
-        while len(open_list) > 0:
-            i_node = open_list.pop()
-            nei_nodes_dict[i_node.xy_name] = i_node
-            neighbours = i_node.neighbours
-            random.shuffle(neighbours)
-            for node_nei_name in neighbours:
-                if node_nei_name not in nei_nodes_dict:
-                    node_nei = self.nodes_dict[node_nei_name]
-                    open_list.append(node_nei)
-                    if node_nei_name in pos_to_agent_dict:
-                        nei_agent = pos_to_agent_dict[node_nei_name]
-                        nei_agent.set_order(i)
-                        i += 1
-        self.agents.sort(key=lambda x: x.order)
-
-    def _all_secondary_init(self, distr_time):
-        parallel_times = [0]
-        for i, agent in enumerate(self.agents):
-
-            local_start_time = time.time()
-
-            agent.secondary_init()
-
-            # limit check
-            passed_time = time.time() - local_start_time
-            parallel_times.append(passed_time)
-            if distr_time + passed_time > self.time_to_think_limit:
-                self._cut_up_to_the_limit(i)
-                return True, distr_time + max(parallel_times)
-
-        return False, distr_time + max(parallel_times)
 
     def _find_free_spots(self):
-        node_name_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents[1:]}
+        rest_of_agents = self.agents[1:]
+        node_name_to_agent_dict = {a.curr_node.xy_name: a for a in rest_of_agents}
         node_name_of_agents = list(node_name_to_agent_dict.keys())
-        node_names_of_plan = [n.xy_name for n in self.u_leader.plan]
         assert self.u_leader.curr_node.xy_name not in node_name_to_agent_dict
+        node_names_of_plan = list(set([n.xy_name for n in self.u_leader.plan]))
         conflicts = np.intersect1d(node_name_of_agents, node_names_of_plan)
         n_of_conflicts = len(conflicts)
 
+        # there are no agents on the path
         if n_of_conflicts == 0:
             # all stay on place
-            for a in self.agents[1:]:
-                a.dppibt_build_plan(goal=a.curr_node)
-            return False, None, None
+            for a in rest_of_agents:
+                a.set_istay()
+            return False, None, None, None
 
+        # there are agents on the path
         closed_node_names = [self.u_leader.curr_node.xy_name]
-        nodes_to_open = self.u_leader.plan[:]
+        nodes_to_open = list(set(self.u_leader.plan[:]))
         closed_node_names.extend(node_names_of_plan)
         free_nodes_to_fill = []
         infected_agents = [node_name_to_agent_dict[c] for c in conflicts]
+        directed_graph = []
         while len(nodes_to_open) > 0:
             next_node = nodes_to_open.pop(0)
-            closed_node_names.append(next_node.xy_name)
+            open_names = [n.xy_name for n in nodes_to_open]
+            if next_node.xy_name not in closed_node_names:
+                closed_node_names.append(next_node.xy_name)
 
             for nei_name in next_node.neighbours:
+                if nei_name in open_names:
+                    continue
                 if nei_name in closed_node_names:
                     continue
                 curr_node = self.nodes_dict[nei_name]
+                directed_graph.append((next_node.xy_name, curr_node.xy_name))
                 if nei_name in node_name_to_agent_dict:
+                    # infect this agent
                     nei_agent = node_name_to_agent_dict[nei_name]
                     if nei_agent not in infected_agents:
                         infected_agents.append(nei_agent)
                     # n_of_conflicts += 1
                 else:
+                    # we found a free spot
                     free_nodes_to_fill.append(curr_node)
                     if len(free_nodes_to_fill) == n_of_conflicts:
-                        return True, infected_agents, free_nodes_to_fill
+                        for a in rest_of_agents:
+                            if a not in infected_agents:
+                                a.set_istay()
+                        return True, infected_agents, free_nodes_to_fill, directed_graph
                 nodes_to_open.append(curr_node)
+                open_names = [n.xy_name for n in nodes_to_open]
 
-        # all stay on place
+        # all stay on place, because we found not enough free spots
         for a in self.agents:
-            a.dppibt_build_plan(goal=a.curr_node)
-        return False, None, None
+            a.set_istay()
+        return False, None, None, None
 
-    def _plan_ways_aside(self, infected_agents, free_nodes_to_fill):
-        # h_func(from_node, to_node)
-        h_agents = []
-        for a in self.agents[1:]:
-            if a not in infected_agents:
-                a.dppibt_build_plan(goal=a.curr_node)
-                h_agents.append(a)
+    def _plan_ways_aside(self, infected_agents, free_nodes_to_fill, directed_graph):
+        # how to use h_func: h_func(from_node, to_node)
+
+        # prep
         node_names_of_plan = list(set([n.xy_name for n in self.u_leader.plan]))
-        while len(free_nodes_to_fill) > 0:
-            free_nodes_to_fill.sort(key=lambda n: self.h_func(self.u_leader.curr_node, n), reverse=True)
-            next_node = free_nodes_to_fill.pop(0)
-            infected_agents.sort(key=lambda a: self.h_func(a.curr_node, next_node))
-            nearest_agent = infected_agents.pop(0)
-            if nearest_agent.curr_node.xy_name not in node_names_of_plan:
-                free_nodes_to_fill.append(nearest_agent.curr_node)
-            nearest_agent.dppibt_build_plan(h_agents=h_agents, goal=next_node)
-            assert nearest_agent.plan_succeeded
-            h_agents.append(nearest_agent)
-        self.u_leader.dppibt_build_plan(h_agents=h_agents)
+        for a in infected_agents:
+            a.plan = [a.curr_node]
+            if a.curr_node.xy_name not in node_names_of_plan:
+                free_nodes_to_fill.append(a.curr_node)
+        all_graph_names = [x[0] for x in directed_graph]
+        all_graph_names.extend([x[1] for x in directed_graph])
+        all_graph_names.extend(node_names_of_plan)
+        all_graph_names = list(set(all_graph_names))
 
-    def _all_find_conf_agents(self, distr_time):
+        step_count = 0
+        while step_count < self.h - 1:
+            prev_config = [a.plan[-1].xy_name for a in infected_agents]
+            next_config = []
+            assert len(set(prev_config)) == len(prev_config)
+            for i_a in infected_agents:
+                last_node = i_a.plan[-1]
+                last_node_name = i_a.plan[-1].xy_name
+                # on the path
+                if last_node_name in node_names_of_plan:
+
+                    next_to_move = [n for n in last_node.neighbours if n not in prev_config]
+                    next_to_move = [n for n in next_to_move if n in all_graph_names]
+                    # surrounded by agents
+                    if len(next_to_move) == 0:
+                        i_a.plan.append(last_node)
+                        next_config.append(last_node_name)
+                        continue
+
+                    to_nodes_tuples = list(filter(lambda x: x[0] in node_names_of_plan, directed_graph))
+                    to_nodes_names = [x[1] for x in to_nodes_tuples]
+                    to_nodes_names_free = [x for x in to_nodes_names if x not in prev_config]
+                    # no free nodes near the path available
+                    if len(to_nodes_names_free) == 0:
+                        i_a.plan.append(last_node)
+                        next_config.append(last_node_name)
+                        continue
+
+                    to_nodes_names_free.sort(key=lambda x: self.h_func(self.nodes_dict[x], last_node))
+                    nearest_out_free = to_nodes_names_free[0]
+
+                    # next_to_move = [n for n in last_node.neighbours if n in all_graph_names]
+                    # next_to_move.remove(last_node_name)
+                    next_to_move.sort(key=lambda x: self.h_func(self.nodes_dict[x], self.nodes_dict[nearest_out_free]))
+                    next_node_name = next_to_move[0]
+                    if next_node_name not in next_config:
+                        i_a.plan.append(self.nodes_dict[next_node_name])
+                        next_config.append(next_node_name)
+                        continue
+                    else:
+                        i_a.plan.append(last_node)
+                        next_config.append(last_node_name)
+                        continue
+                # out of the path
+                else:
+                    to_nodes_tuples = list(filter(lambda x: x[0] == last_node_name, directed_graph))
+                    to_nodes_names = [x[1] for x in to_nodes_tuples]
+                    next_node_name = last_node_name
+                    for to_node_name in to_nodes_names:
+                        if to_node_name in prev_config:
+                            continue
+                        next_node_name = to_node_name
+                        break
+                    if next_node_name not in next_config:
+                        i_a.plan.append(self.nodes_dict[next_node_name])
+                        next_config.append(next_node_name)
+                        continue
+                    else:
+                        i_a.plan.append(last_node)
+                        next_config.append(last_node_name)
+                        continue
+
+            # all arrived out of the path
+            if all([a.plan[-1].xy_name not in node_names_of_plan for a in infected_agents]):
+                break
+            step_count += 1
+
+        # plan for leader
+        for a in infected_agents:
+            a.plan = a.plan[1:]
+            a.fulfill_the_plan()
+        rest_of_agents = self.agents[1:]
+        self.u_leader.dppibt_build_plan(h_agents=rest_of_agents)
+
+    def _all_find_conf_agents(self):
         there_are_collisions, n_collisions = False, 0
         col_str = ''
         for agent1, agent2 in combinations(self.agents, 2):
@@ -237,7 +277,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
                 n_collisions += 1
                 col_str = f'{agent1.name} <-> {agent2.name}'
         print(f'\r>>>> {self.curr_iteration=}, {n_collisions} collisions, last one: {col_str}', end='')
-        return there_are_collisions, distr_time
+        return there_are_collisions
 
 
 @use_profiler(save_dir='../stats/alg_dppibt_v2.pstat')
@@ -245,7 +285,7 @@ def main():
     # Alg params
     # mem_weight = 1
     mem_weight = 2
-    h = 5
+    h = 10
     w = h
     # alg_name = 'SDS'
     # alg_name = 'PF-SDS'
@@ -281,7 +321,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=300,
+        n_agents=600,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -291,14 +331,14 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='tree.map', predefined_nodes=True, scen_name='tree',  # yes
         # img_dir='corners.map', predefined_nodes=True, scen_name='corners',  # yes
-        img_dir='tunnel.map', predefined_nodes=True, scen_name='tunnel',  # yes (slow)
+        # img_dir='tunnel.map', predefined_nodes=True, scen_name='tunnel',  # yes (slow)
         # img_dir='string.map', predefined_nodes=True, scen_name='string',  # yes
         # img_dir='loop_chain.map', predefined_nodes=True, scen_name='loop_chain',  # no
         # img_dir='connector.map', predefined_nodes=True, scen_name='connector',  # yes
