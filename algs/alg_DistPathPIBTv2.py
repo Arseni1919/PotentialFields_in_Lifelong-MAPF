@@ -133,7 +133,7 @@ class AlgSDS(AlgParObsPFPrPSeq):
 
         # there are agents on the path
         closed_node_names = [self.u_leader.curr_node.xy_name]
-        nodes_to_open = list(set(self.u_leader.plan[:]))
+        nodes_to_open = list(set(self.u_leader.plan[:-1]))
         closed_node_names.extend(node_names_of_plan)
         free_nodes_to_fill = []
         infected_agents = [node_name_to_agent_dict[c] for c in conflicts]
@@ -331,10 +331,13 @@ def main():
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
         # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
-        # img_dir='maze-32-32-2.map',  # 32-32
+        img_dir='maze-32-32-2.map',  # 32-32
+
+        # img_dir='random-64-64-20.map',
+        # img_dir='maze-128-128-2.map',
 
         # img_dir='tree.map', predefined_nodes=True, scen_name='tree',  # yes
         # img_dir='corners.map', predefined_nodes=True, scen_name='corners',  # yes
@@ -344,7 +347,7 @@ def main():
         # img_dir='connector.map', predefined_nodes=True, scen_name='connector',  # yes
         # img_dir='10_10_my_rand.map',  # 32-32
         # img_dir='random-64-64-20.map',  # 64-64
-        # img_dir='warehouse-10-20-10-2-1.map',  # 32-32
+        # img_dir='warehouse-10-20-10-2-1.map',  # 161x63
     )
 
 
