@@ -12,12 +12,67 @@ from environments.env_LL_MAPF import EnvLifelongMAPF
 from algs.alg_ParObs_PF_PrP_seq import ParObsPFPrPAgent, AlgParObsPFPrPSeq
 
 
+def find_span_roadmaps(the_agent, rest_of_agents, nodes_dict):
+    node_name_to_agent_dict = {a.curr_node.xy_name: a for a in rest_of_agents}
+    node_name_of_agents = list(node_name_to_agent_dict.keys())
+    assert the_agent.curr_node.xy_name not in node_name_to_agent_dict
+    node_names_of_plan = list(set([n.xy_name for n in the_agent.plan]))
+    conflicts = np.intersect1d(node_name_of_agents, node_names_of_plan)
+    n_of_conflicts = len(conflicts)
+
+    # there are no agents on the path
+    if n_of_conflicts == 0:
+        to_replan_others = False
+        there_path_is_possible = True
+        return to_replan_others, there_path_is_possible, None, None, None
+
+    # there are agents on the path
+    closed_node_names = [the_agent.curr_node.xy_name]  # except first location
+    nodes_to_open = list(set(the_agent.plan[:-1]))  # except last location
+    closed_node_names.extend(node_names_of_plan)
+    free_nodes_to_fill = []
+    infected_agents = [node_name_to_agent_dict[c] for c in conflicts]
+    directed_graph = []
+    while len(nodes_to_open) > 0:
+        next_node = nodes_to_open.pop(0)
+        open_names = [n.xy_name for n in nodes_to_open]
+        if next_node.xy_name not in closed_node_names:
+            closed_node_names.append(next_node.xy_name)
+
+        for nei_name in next_node.neighbours:
+            if nei_name in open_names:
+                continue
+            if nei_name in closed_node_names:
+                continue
+            curr_node = nodes_dict[nei_name]
+            directed_graph.append((next_node.xy_name, curr_node.xy_name))
+            if nei_name in node_name_to_agent_dict:
+                # infect this agent
+                nei_agent = node_name_to_agent_dict[nei_name]
+                if nei_agent not in infected_agents:
+                    infected_agents.append(nei_agent)
+                # n_of_conflicts += 1
+            else:
+                # we found a free spot
+                free_nodes_to_fill.append(curr_node)
+                if len(free_nodes_to_fill) == n_of_conflicts:
+                    to_replan_others = True
+                    there_path_is_possible = True
+                    return to_replan_others, there_path_is_possible, infected_agents, free_nodes_to_fill, directed_graph
+            nodes_to_open.append(curr_node)
+            open_names = [n.xy_name for n in nodes_to_open]
+
+    # all stay on place, because we found not enough free spots
+    to_replan_others = False
+    there_path_is_possible = False
+    return to_replan_others, there_path_is_possible, None, None, None
+
+
 class SDSAgent(ParObsPFPrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
         super().__init__(num, start_node, next_goal_node, **kwargs)
         self.a_names_in_conf_list = []
         self.a_names_in_conf_list_prev = []
-        self.lower_agents_processed = []
         self.higher_agents_processed_prev = []
         self.order = None
         self.team_leader = None
@@ -27,7 +82,6 @@ class SDSAgent(ParObsPFPrPAgent):
     def set_order(self, order):
         self.order = order
         self.a_names_in_conf_list = []
-        self.lower_agents_processed = []
         self.plan = None
         self.plan_succeeded = True
 
@@ -75,11 +129,11 @@ class AlgSDS(AlgParObsPFPrPSeq):
         self.u_leader.dppibt_build_plan()
 
         # find free locations
-        to_continue, infected_agents, free_nodes_to_fill, directed_graph = self._find_free_spots()
+        to_replan_o, there_is_path, inf_agents, free_nodes, dir_graph = self._find_free_spots()
 
         # if there are agents on the track and the plan is possible
-        if to_continue:
-            self._plan_ways_aside(infected_agents, free_nodes_to_fill, directed_graph)
+        if to_replan_o:
+            self._plan_ways_aside(inf_agents, free_nodes, dir_graph)
 
         # find collisions
         there_are_collisions = self._all_find_conf_agents()
@@ -116,62 +170,75 @@ class AlgSDS(AlgParObsPFPrPSeq):
             agent.set_order(i)
 
     def _find_free_spots(self):
-        rest_of_agents = self.agents[1:]
-        node_name_to_agent_dict = {a.curr_node.xy_name: a for a in rest_of_agents}
-        node_name_of_agents = list(node_name_to_agent_dict.keys())
-        assert self.u_leader.curr_node.xy_name not in node_name_to_agent_dict
-        node_names_of_plan = list(set([n.xy_name for n in self.u_leader.plan]))
-        conflicts = np.intersect1d(node_name_of_agents, node_names_of_plan)
-        n_of_conflicts = len(conflicts)
+        to_replan_o, there_is_path, inf_agents, free_nodes, dir_graph = find_span_roadmaps(
+            the_agent=self.u_leader, rest_of_agents=self.agents[1:], nodes_dict=self.nodes_dict
+        )
 
-        # there are no agents on the path
-        if n_of_conflicts == 0:
-            # all stay on place
-            for a in rest_of_agents:
-                a.set_istay()
-            return False, None, None, None
-
-        # there are agents on the path
-        closed_node_names = [self.u_leader.curr_node.xy_name]
-        nodes_to_open = list(set(self.u_leader.plan[:-1]))
-        closed_node_names.extend(node_names_of_plan)
-        free_nodes_to_fill = []
-        infected_agents = [node_name_to_agent_dict[c] for c in conflicts]
-        directed_graph = []
-        while len(nodes_to_open) > 0:
-            next_node = nodes_to_open.pop(0)
-            open_names = [n.xy_name for n in nodes_to_open]
-            if next_node.xy_name not in closed_node_names:
-                closed_node_names.append(next_node.xy_name)
-
-            for nei_name in next_node.neighbours:
-                if nei_name in open_names:
-                    continue
-                if nei_name in closed_node_names:
-                    continue
-                curr_node = self.nodes_dict[nei_name]
-                directed_graph.append((next_node.xy_name, curr_node.xy_name))
-                if nei_name in node_name_to_agent_dict:
-                    # infect this agent
-                    nei_agent = node_name_to_agent_dict[nei_name]
-                    if nei_agent not in infected_agents:
-                        infected_agents.append(nei_agent)
-                    # n_of_conflicts += 1
-                else:
-                    # we found a free spot
-                    free_nodes_to_fill.append(curr_node)
-                    if len(free_nodes_to_fill) == n_of_conflicts:
-                        for a in rest_of_agents:
-                            if a not in infected_agents:
-                                a.set_istay()
-                        return True, infected_agents, free_nodes_to_fill, directed_graph
-                nodes_to_open.append(curr_node)
-                open_names = [n.xy_name for n in nodes_to_open]
-
-        # all stay on place, because we found not enough free spots
-        for a in self.agents:
+        if to_replan_o and there_is_path:
+            for a in self.agents[1:]:
+                if a not in inf_agents:
+                    a.set_istay()
+            return to_replan_o, there_is_path, inf_agents, free_nodes, dir_graph
+        for a in self.agents[1:]:
             a.set_istay()
-        return False, None, None, None
+        return to_replan_o, there_is_path, inf_agents, free_nodes, dir_graph
+
+        # rest_of_agents = self.agents[1:]
+        # node_name_to_agent_dict = {a.curr_node.xy_name: a for a in rest_of_agents}
+        # node_name_of_agents = list(node_name_to_agent_dict.keys())
+        # assert self.u_leader.curr_node.xy_name not in node_name_to_agent_dict
+        # node_names_of_plan = list(set([n.xy_name for n in self.u_leader.plan]))
+        # conflicts = np.intersect1d(node_name_of_agents, node_names_of_plan)
+        # n_of_conflicts = len(conflicts)
+        #
+        # # there are no agents on the path
+        # if n_of_conflicts == 0:
+        #     # all stay on place
+        #     for a in rest_of_agents:
+        #         a.set_istay()
+        #     return False, None, None, None
+        #
+        # # there are agents on the path
+        # closed_node_names = [self.u_leader.curr_node.xy_name]
+        # nodes_to_open = list(set(self.u_leader.plan[:-1]))
+        # closed_node_names.extend(node_names_of_plan)
+        # free_nodes_to_fill = []
+        # infected_agents = [node_name_to_agent_dict[c] for c in conflicts]
+        # directed_graph = []
+        # while len(nodes_to_open) > 0:
+        #     next_node = nodes_to_open.pop(0)
+        #     open_names = [n.xy_name for n in nodes_to_open]
+        #     if next_node.xy_name not in closed_node_names:
+        #         closed_node_names.append(next_node.xy_name)
+        #
+        #     for nei_name in next_node.neighbours:
+        #         if nei_name in open_names:
+        #             continue
+        #         if nei_name in closed_node_names:
+        #             continue
+        #         curr_node = self.nodes_dict[nei_name]
+        #         directed_graph.append((next_node.xy_name, curr_node.xy_name))
+        #         if nei_name in node_name_to_agent_dict:
+        #             # infect this agent
+        #             nei_agent = node_name_to_agent_dict[nei_name]
+        #             if nei_agent not in infected_agents:
+        #                 infected_agents.append(nei_agent)
+        #             # n_of_conflicts += 1
+        #         else:
+        #             # we found a free spot
+        #             free_nodes_to_fill.append(curr_node)
+        #             if len(free_nodes_to_fill) == n_of_conflicts:
+        #                 for a in rest_of_agents:
+        #                     if a not in infected_agents:
+        #                         a.set_istay()
+        #                 return True, infected_agents, free_nodes_to_fill, directed_graph
+        #         nodes_to_open.append(curr_node)
+        #         open_names = [n.xy_name for n in nodes_to_open]
+        #
+        # # all stay on place, because we found not enough free spots
+        # for a in self.agents:
+        #     a.set_istay()
+        # return False, None, None, None
 
     def _plan_ways_aside(self, infected_agents, free_nodes_to_fill, directed_graph):
         # how to use h_func: h_func(from_node, to_node)
@@ -321,7 +388,7 @@ def main():
         # iterations=200,  # !!!
         iterations=100,
         # iterations=50,
-        n_agents=600,
+        n_agents=737,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,
@@ -332,9 +399,9 @@ def main():
         # Map
         # img_dir='empty-32-32.map',  # 32-32
         # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        # img_dir='random-32-32-20.map',  # 32-32
+        img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
-        img_dir='maze-32-32-2.map',  # 32-32
+        # img_dir='maze-32-32-2.map',  # 32-32
 
         # img_dir='random-64-64-20.map',
         # img_dir='maze-128-128-2.map',
