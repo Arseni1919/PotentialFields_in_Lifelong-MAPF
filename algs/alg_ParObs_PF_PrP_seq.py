@@ -514,8 +514,8 @@ def main():
     # Alg params
     # alg_name = 'PrP'
     # alg_name = 'PF-PrP'
-    alg_name = 'ParObs-PrP'
-    # alg_name = 'ParObs-PF-PrP'
+    # alg_name = 'ParObs-PrP'
+    alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
         'PrP': {},

@@ -439,7 +439,7 @@ def main():
         # img_dir='string.map', predefined_nodes=True, scen_name='string',  # yes
         # img_dir='loop_chain.map', predefined_nodes=True, scen_name='loop_chain',  # no
         # img_dir='connector.map', predefined_nodes=True, scen_name='connector',  # yes
-        # img_dir='10_10_my_rand.map',  # 32-32
+        # img_dir='10_10_my_rand.map',  # 10-10
         # img_dir='random-64-64-20.map',  # 64-64
         # img_dir='warehouse-10-20-10-2-1.map',  # 161x63
     )

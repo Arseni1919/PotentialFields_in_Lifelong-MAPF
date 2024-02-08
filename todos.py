@@ -31,13 +31,12 @@ DONE:
 - implement single-shot MAPF in the simulator
 - BUG: additional step
 - implement SDS
+- write a paper
+- submit to a conference
 
 ##########################################
 ##########################################
 TODO:
-
-- write a paper
-- submit to a conference
 
 - maybe implement the full LNS2
 - examine parameters on different maps

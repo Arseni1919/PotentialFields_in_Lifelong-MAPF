@@ -18,12 +18,16 @@ def show_results(**kwargs):
             # plot_time(ax[2], info=logs_dict)
             fig, ax = plt.subplots(figsize=(5, 5))
             # plot_sr(ax, info=logs_dict)
-            plot_soc(ax, info=logs_dict)
+            # plot_soc(ax, info=logs_dict)
+            # plot_rsoc(ax, info=logs_dict)
+            # plot_time_metric(ax, info=logs_dict)
+            plot_time_metric_cactus(ax, info=logs_dict)
 
         else:
 
             fig, ax = plt.subplots(figsize=(5, 5))
             plot_throughput(ax, info=logs_dict)
+            # plot_lmapf_time(ax, info=logs_dict)
 
         plt.show()
 
@@ -45,9 +49,9 @@ def main():
     file_dir = 'MAPF_2023-11-30--16-21_ALGS-4_RUNS-15_MAP-maze-32-32-2.json'
 
     # parameters
-    # file_dir = '2023-11-27--07-46_ALGS-6_RUNS-15_MAP-random-32-32-10.json'  # weight
-    # file_dir = '2023-11-28--10-03_ALGS-7_RUNS-15_MAP-random-32-32-10.json'  # size
-    # file_dir = '2023-11-29--06-27_ALGS-7_RUNS-15_MAP-random-32-32-10.json'  # shape
+    # file_dir = 'weights_2023-11-27--07-46_ALGS-6_RUNS-15_MAP-random-32-32-10.json'  # weight
+    # file_dir = 'sizes_2023-11-28--10-03_ALGS-7_RUNS-15_MAP-random-32-32-10.json'  # size
+    # file_dir = 'shapes_2023-11-29--06-27_ALGS-7_RUNS-15_MAP-random-32-32-10.json'  # shape
     show_results(file_dir=f'final_logs/{file_dir}')
 
 

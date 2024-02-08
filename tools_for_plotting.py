@@ -1,3 +1,5 @@
+import numpy as np
+
 from globals import *
 from functions import get_color
 
@@ -262,15 +264,16 @@ def plot_sr(ax, info):
         sr_list = []
         for n_a in n_agents_list:
             sr_list.append(np.sum(info[i_alg][f'{n_a}']['sr']) / len(info[i_alg][f'{n_a}']['sr']))
-        ax.plot(n_agents_list, sr_list, markers_lines_dict[i_alg], color=colors_dict[i_alg], alpha=0.5, label=f'{i_alg}')
+        ax.plot(n_agents_list, sr_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=5, markersize=20)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
     ax.set_xticks(n_agents_list)
-    ax.set_xlabel('N agents')
-    ax.set_ylabel('Success Rate')
+    ax.set_xlabel('N agents', fontsize=15)
+    ax.set_ylabel('Success Rate', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
     set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
-                   size=10)
-    set_legend(ax, size=12)
+                   size=11)
+    set_legend(ax, size=17)
 
 
 def plot_soc(ax, info):
@@ -295,6 +298,97 @@ def plot_soc(ax, info):
     set_legend(ax, size=12)
 
 
+def plot_rsoc(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    for i_alg_no_pf, i_alg in [('PrP', 'PF-PrP'), ('LNS2', 'PF-LNS2')]:
+        no_pf_soc_list = []
+        for n_a in n_agents_list:
+            no_pf_soc_list.append(np.mean(info[i_alg_no_pf][f'{n_a}']['soc']))
+        no_pf_soc_list = np.array(no_pf_soc_list)
+        soc_list = []
+        for n_a in n_agents_list:
+            soc_list.append(np.mean(info[i_alg][f'{n_a}']['soc']))
+        soc_list = np.array(soc_list)
+        y_list = soc_list / no_pf_soc_list
+        ax.plot(n_agents_list, y_list, markers_lines_dict[i_alg], color=colors_dict[i_alg], alpha=0.5, label=f'{i_alg}')
+
+        # print
+        print(f'{i_alg}')
+        for n_a, y_val in zip(n_agents_list, y_list):
+            print(f'{n_a} -> {y_val: .2f}')
+
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents')
+    ax.set_ylabel('Average RSoC')
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
+                   size=10)
+    set_legend(ax, size=12)
+
+
+def plot_time_metric(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    # x_list = n_agents_list[:4]
+    x_list = n_agents_list
+    for i_alg in alg_names:
+        soc_list = []
+        res_str = ''
+        for n_a in x_list:
+            soc_list.append(np.mean(info[i_alg][f'{n_a}']['time']))
+            res_str += f'\t{n_a} - {soc_list[-1]: .2f}, '
+        ax.plot(x_list, soc_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=5, markersize=20)
+        print(f'{i_alg}\t\t\t: {res_str}')
+    ax.set_xlim([min(x_list) - 20, max(x_list) + 20])
+    ax.set_xticks(x_list)
+    ax.set_xlabel('N agents', fontsize=15)
+    ax.set_ylabel('Average Runtime', fontsize=15)
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
+                   size=11)
+    set_legend(ax, size=17)
+
+
+def plot_time_metric_cactus(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    # x_list = n_agents_list[:4]
+    x_list = n_agents_list
+    for i_alg in alg_names:
+        rt_list = []
+        # res_str = ''
+        for n_a in x_list:
+            rt_list.extend(info[i_alg][f'{n_a}']['time'])
+            # res_str += f'\t{n_a} - {rt_list[-1]: .2f}, '
+        rt_list.sort()
+        ax.plot(rt_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=2, markersize=10)
+        # print(f'{i_alg}\t\t\t: {res_str}')
+    # ax.set_xlim([min(x_list) - 20, max(x_list) + 20])
+    # ax.set_xticks(x_list)
+    ax.set_xlabel('Solved Instances', fontsize=15)
+    ax.set_ylabel('Runtime', fontsize=15)
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
+                   size=11)
+    set_legend(ax, size=17)
+
+
 def plot_makespan(ax, info):
     ax.cla()
     alg_names = info['alg_names']
@@ -317,28 +411,6 @@ def plot_makespan(ax, info):
     set_legend(ax, size=12)
 
 
-def plot_time(ax, info):
-    ax.cla()
-    alg_names = info['alg_names']
-    n_agents_list = info['n_agents_list']
-    img_dir = info['img_dir']
-    time_to_think_limit = info['time_to_think_limit']
-
-    for i_alg in alg_names:
-        makespan_list = []
-        for n_a in n_agents_list:
-            makespan_list.append(np.mean(info[i_alg][f'{n_a}']['time']))
-        ax.plot(n_agents_list, makespan_list, '-^', label=f'{i_alg}')
-    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
-    ax.set_xticks(n_agents_list)
-    ax.set_xlabel('N agents')
-    ax.set_ylabel('Average Time To Solve')
-    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
-    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
-                   size=10)
-    set_legend(ax, size=12)
-
-
 def plot_throughput(ax, info):
     ax.cla()
     alg_names = info['alg_names']
@@ -351,11 +423,35 @@ def plot_throughput(ax, info):
         y_list = []
         for n_a in n_agents_list:
             y_list.append(np.mean(info[i_alg][f'{n_a}']['n_closed_goals']))
+        ax.plot(n_agents_list, y_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=3, markersize=13)
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents', fontsize=15)
+    ax.set_ylabel('Average Throughput', fontsize=15)
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.',
+                   size=11)
+    set_legend(ax, size=11)
+
+
+def plot_lmapf_time(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+    iterations = info['iterations']
+
+    for i_alg in alg_names:
+        y_list = []
+        for n_a in n_agents_list:
+            y_list.append(np.mean(info[i_alg][f'{n_a}']['time']))
         ax.plot(n_agents_list, y_list, markers_lines_dict[i_alg], color=colors_dict[i_alg], label=i_alg)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
     ax.set_xticks(n_agents_list)
     ax.set_xlabel('N agents')
-    ax.set_ylabel('Average Throughput')
+    ax.set_ylabel('Average Runtime')
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.')
     set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.',
                    size=10)
