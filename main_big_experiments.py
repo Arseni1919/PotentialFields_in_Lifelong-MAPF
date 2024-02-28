@@ -155,7 +155,7 @@ def run_big_experiments(**kwargs):
                     if classical_rhcr_mapf:
                         plot_sr(ax[0], info=logs_dict)
                         plot_soc(ax[1], info=logs_dict)
-                        plot_time(ax[2], info=logs_dict)
+                        # plot_time(ax[2], info=logs_dict)
                         # plot_makespan(ax[2], info=logs_dict)
                     else:
                         plot_throughput(ax, info=logs_dict)

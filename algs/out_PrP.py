@@ -35,7 +35,6 @@ class ParObsPFPrPAgent:
         self.nodes_dict = kwargs['nodes_dict']
         self.h_func = kwargs['h_func']
         self.h_dict = kwargs['h_dict']
-        self.params = kwargs['params']
         self.map_dim = kwargs['map_dim']
         self.heuristic_value = None
         self.heuristic_value_init = self.h_dict[self.next_goal_node.xy_name][self.curr_node.x, self.curr_node.y]
@@ -44,8 +43,8 @@ class ParObsPFPrPAgent:
         self.nei_list, self.nei_dict, self.nei_plans_dict, self.nei_h_dict, self.nei_pf_dict, self.nei_succ_dict = [], {}, {}, {}, {}, {}
         self.nei_num_dict = {}
         self.nei_pfs = None
-        self.h, self.w = set_h_and_w(self)
-        self.pf_weight = set_pf_weight(self)
+        self.h = 5
+        self.w = 5
         self.latest_arrival = None
         self.time_passed_from_last_goal = None
 
@@ -82,8 +81,7 @@ class ParObsPFPrPAgent:
             nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
             sub_results = create_sub_results(nei_h_agents)
             v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
-            nei_pfs, max_plan_len = self._build_nei_pfs(nei_h_agents)
-            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs,
+            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem,
                                 goal=goal, nodes=nodes, nodes_dict=nodes_dict)
         return self.plan
 
@@ -95,9 +93,6 @@ class ParObsPFPrPAgent:
 
     def choose_action(self):
         next_node: Node = self.plan.pop(0)
-        if self.pf_weight != 0:
-            self.pf_field = self.pf_field[:, :, 1:]
-            self.correct_nei_pfs()
         return next_node.xy_name
 
     def get_full_plan(self):
@@ -105,113 +100,7 @@ class ParObsPFPrPAgent:
         full_plan.extend(self.plan)
         return full_plan
 
-    def _get_weight(self, nei_heuristic_value):
-
-        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'short_paths'
-        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'long_paths'
-        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'my_h_long'
-        # pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'my_h_short'
-        pf_weight_pref = self.params['pf_weight_pref'] if 'pf_weight_pref' in self.params else 'uniform'
-
-        # Prefer Longer Paths
-        if pf_weight_pref == 'long_paths':
-            relative_length = (nei_heuristic_value / self.heuristic_value) / 2
-            if 0 <= relative_length < 0.2:
-                return 0
-            if 0.2 <= relative_length < 0.4:
-                return 0.25 * self.pf_weight
-            if 0.4 <= relative_length < 0.6:
-                return 0.5 * self.pf_weight
-            if 0.6 <= relative_length < 0.8:
-                return 0.75 * self.pf_weight
-            if 0.8 <= relative_length:
-                return self.pf_weight
-
-        # Prefer Shorter Paths
-        if pf_weight_pref == 'short_paths':
-            relative_length = (nei_heuristic_value / self.heuristic_value) / 2
-            if 0 <= relative_length < 0.2:
-                return self.pf_weight
-            if 0.2 <= relative_length < 0.4:
-                return 0.75 * self.pf_weight
-            if 0.4 <= relative_length < 0.6:
-                return 0.5 * self.pf_weight
-            if 0.6 <= relative_length < 0.8:
-                return 0.25 * self.pf_weight
-            if 0.8 <= relative_length:
-                return 0
-
-        if pf_weight_pref == 'my_h_long':
-            big_size = max(self.map_dim) / 2
-            if self.heuristic_value < big_size:
-                partial = 1 - (self.heuristic_value / big_size)
-                return partial * self.pf_weight
-            return 0
-
-        if pf_weight_pref == 'my_h_short':
-            big_size = max(self.map_dim) / 2
-            if self.heuristic_value < big_size:
-                partial = self.heuristic_value / big_size
-                return partial * self.pf_weight
-            return self.pf_weight
-
-        if pf_weight_pref == 'uniform':
-            return self.pf_weight
-
-        return self.pf_weight
-
-    # POTENTIAL FIELDS ****************************** pf_weight ******************************
-    def _build_nei_pfs(self, h_agents):
-        if self.pf_weight == 0:
-            self.nei_pfs = None
-            return None, None
-        if len(h_agents) == 0:
-            return None, None
-        max_plan_len = max([len(agent.plan) for agent in h_agents])
-        nei_pfs = np.zeros((self.map_dim[0], self.map_dim[1], max_plan_len))  # x, y, t
-        for nei_agent in h_agents:
-            up_until_t = len(nei_agent.plan)
-            weight = self._get_weight(nei_heuristic_value=nei_agent.heuristic_value)
-            nei_pfs[:, :, :up_until_t] += weight * nei_agent.pf_field
-
-        self.nei_pfs = nei_pfs
-        return nei_pfs, max_plan_len
-
-    # POTENTIAL FIELDS ****************************** pf_size  ******************************
-    # POTENTIAL FIELDS ****************************** pf_shape ******************************
-    def _get_gradient_list(self):
-        pf_size = self.params['pf_size']
-        pf_shape = self.params['pf_shape'] if 'pf_shape' in self.params else 2
-        if pf_size == 'h':
-            h_value = self.h_func(self.start_node, self.next_goal_node)
-        else:
-            h_value = pf_shape ** pf_size
-        biggest_value = h_value
-        gradient_list = [h_value]
-        while h_value > 1:
-            h_value /= pf_shape
-            gradient_list.append(h_value)
-        gradient_list = [i / biggest_value for i in gradient_list]
-        return gradient_list
-
-    # POTENTIAL FIELDS ************************* pf_shape of circle ************************
-    def _create_pf_field(self):
-        # if self.curr_node.xy_name == self.next_goal_node.xy_name: return
-        if self.pf_weight == 0: return
-        gradient_list = self._get_gradient_list()
-        if len(gradient_list) == 0: return
-
-        self.pf_field = np.zeros((self.map_dim[0], self.map_dim[1], len(self.plan)))
-        if check_stay_at_same_node(self.plan, self.next_goal_node):
-            return
-        for i_time, next_node in enumerate(self.plan):
-            nei_nodes, nei_nodes_dict = get_nei_nodes(next_node, len(gradient_list), self.nodes_dict)
-            for i_node in nei_nodes:
-                distance_index = min(len(gradient_list) - 1, math.floor(euclidean_distance_nodes(next_node, i_node)))
-                self.pf_field[i_node.x, i_node.y, i_time] += float(gradient_list[distance_index])
-        # plot_magnet_field(self.magnet_field)
-
-    def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem, nei_pfs,
+    def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem,
                        goal=None, nodes=None, nodes_dict=None):
         if goal is None:
             goal = self.next_goal_node
@@ -222,15 +111,13 @@ class ParObsPFPrPAgent:
                                         nodes=nodes, nodes_dict=nodes_dict, h_func=self.h_func,
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
-                                        agent_name=self.name,
-                                        nei_pfs=nei_pfs, k_time=self.w + 1, xyt_problem=xyt_problem)
+                                        agent_name=self.name, k_time=self.w + 1, xyt_problem=xyt_problem)
         if new_plan is not None:
             # pop out the current location, because you will order to move to the next location
             self.plan_succeeded = True
             new_plan.pop(0)
             self.plan = new_plan
             self.fulfill_the_plan()
-            self._create_pf_field()
         else:
             # self.plan = None
             # IStay
@@ -246,7 +133,6 @@ class ParObsPFPrPAgent:
     def set_istay(self):
         self.plan = [self.curr_node]
         self.fulfill_the_plan()
-        self._create_pf_field()
         self.plan_succeeded = False
         # print(f' \r\t --- [{self.name}]: I stay!', end='')
 
@@ -258,10 +144,9 @@ class AlgParObsPFPrPSeq:
     .reset()
     .get_actions(observations)
     """
+    name = 'PrP'
 
-    def __init__(self, params, alg_name):
-        self.params = params
-        self.alg_name = alg_name
+    def __init__(self):
         self.env = None
         self.agents = None
         self.agents_dict = {}
@@ -275,7 +160,8 @@ class AlgParObsPFPrPSeq:
         self.i_agent = None
 
         # RHCR part
-        self.h, self.w = set_h_and_w(self)
+        self.h = 5
+        self.w = 5
 
         # limits
         self.time_to_think_limit = None
@@ -304,7 +190,7 @@ class AlgParObsPFPrPSeq:
             new_agent = ParObsPFPrPAgent(
                 num=env_agent.num, start_node=env_agent.start_node, next_goal_node=env_agent.next_goal_node,
                 nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func, h_dict=self.h_dict,
-                map_dim=self.map_dim, params=self.params
+                map_dim=self.map_dim
             )
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
@@ -336,12 +222,10 @@ class AlgParObsPFPrPSeq:
 
         # choose the actions
         actions = {agent.name: agent.choose_action() for agent in self.agents}
-        self._add_one_shot_to_actions(actions)
 
         alg_info = {
             'i_agent': self.i_agent,
             'i_nodes': self.nodes,
-            'alg_name': self.alg_name,
             'time_to_think_limit': self.time_to_think_limit,
         }
         alg_info.update(build_plans_info)
@@ -385,8 +269,6 @@ class AlgParObsPFPrPSeq:
         random.shuffle(good_agents)
         stuck_agents.extend(good_agents)
         self.agents = stuck_agents
-
-        # random.shuffle(self.agents)
 
         for agent in self.agents:
             agent.plan = None
@@ -488,18 +370,6 @@ class AlgParObsPFPrPSeq:
         # IStay
         self._implement_istay()
 
-    def _add_one_shot_to_actions(self, actions):
-        if 'one_shot' in self.params:
-            actions['one_shot'] = self.params['one_shot']
-            actions['latest_arrivals'] = {}
-            actions["succeeded"] = True
-            for agent in self.agents:
-                if not agent.plan_succeeded:
-                    actions["succeeded"] = False
-                    break
-                else:
-                    actions['latest_arrivals'][agent.name] = len(agent.plan)
-
     def _build_plans(self):
         if self.h is None:
             self._build_plans_restart()
@@ -510,48 +380,8 @@ class AlgParObsPFPrPSeq:
 
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
 def main():
-    # Alg params
-    # alg_name = 'PrP'
-    # alg_name = 'PF-PrP'
-    alg_name = 'ParObs-PrP'
-    # alg_name = 'ParObs-PF-PrP'
 
-    params_dict = {
-        'PrP': {},
-        'PF-PrP': {
-            # 'pf_weight': 0.1,
-            'pf_weight': 1,
-            # 'pf_weight': 2,
-            # 'pf_size': 'h',
-            'pf_size': 3,
-            # 'pf_size': 5,
-            # 'pf_size': 2,
-            'pf_shape': 2,
-        },
-        'ParObs-PrP': {
-            # For RHCR
-            'h': 5,  # my step
-            'w': 5,  # my planning
-        },
-        'ParObs-PF-PrP': {
-            # For PF
-            # 'pf_weight': 0.5,
-            'pf_weight': 1,
-            # 'pf_weight': 2,
-            # 'pf_weight': 3,
-            # 'pf_weight': 5,
-            # 'pf_weight': 10,
-            # 'pf_size': 'h',
-            # 'pf_size': 5,
-            'pf_size': 4,
-            # 'pf_size': 2,
-            # For RHCR
-            'h': 5,  # my step
-            'w': 5,  # my planning
-        },
-    }
-
-    alg = AlgParObsPFPrPSeq(params=params_dict[alg_name], alg_name=alg_name)
+    alg = AlgParObsPFPrPSeq()
     test_single_alg(
         alg,
 
@@ -571,18 +401,18 @@ def main():
         iterations=200,
         # iterations=100,
         # iterations=50,
-        n_agents=250,
+        n_agents=100,
         n_problems=1,
-        classical_rhcr_mapf=True,
-        # classical_rhcr_mapf=False,
+        # classical_rhcr_mapf=True,
+        classical_rhcr_mapf=False,
         global_time_limit=100000,
         time_to_think_limit=100000,  # seconds
         rhcr_mapf_limit=10000,
 
         # Map
         # img_dir='empty-32-32.map',  # 32-32
-        # img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
-        img_dir='random-32-32-20.map',  # 32-32
+        img_dir='random-32-32-10.map',  # 32-32          | LNS | Up to 400 agents with w=5, h=2, lim=1min.
+        # img_dir='random-32-32-20.map',  # 32-32
         # img_dir='room-32-32-4.map',  # 32-32
         # img_dir='maze-32-32-2.map',  # 32-32
         # img_dir='empty-48-48.map',

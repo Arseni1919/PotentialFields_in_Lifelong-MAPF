@@ -164,7 +164,7 @@ class EnvLifelongMAPF:
             n_finished_agents = sum([agent.reached_the_goal for agent in self.agents])
             time_passed = time.time() - self.start_time
             classical_mapf_str = f'DONE: {n_finished_agents} / {len(self.agents)}, TIME: {time_passed: .2f}s., '
-        print(f"\n\n[{len(self.agents)}][{info['alg_name']}] "
+        print(f"\n\n[{len(self.agents)}][] "
               f"PROBLEM: {info['i_problem'] + 1}/{info['n_problems']}, "
               f"{classical_mapf_str}"
               f"ITERATION: {info['i'] + 1}\n"

@@ -228,7 +228,8 @@ def try_a_map_from_pic():
     # img_dir = 'ost003d.png'
     # img_dir = 'brc202d.png'
     # img_dir = 'den520d.png'
-    img_dir = 'warehouse-10-20-10-2-1.png'
+    # img_dir = 'warehouse-10-20-10-2-1.png'
+    img_dir = 'random-32-32-20.map'
     map_dim = get_dims_from_pic(img_dir=img_dir, path='../maps')
     nodes, nodes_dict, img_np = build_graph_nodes(img_dir=img_dir, path='../maps', show_map=False)
     # ------------------------- #
