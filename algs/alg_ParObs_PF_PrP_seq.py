@@ -223,7 +223,8 @@ class ParObsPFPrPAgent:
                                         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
                                         perm_constr_dict=perm_constr_dict,
                                         agent_name=self.name,
-                                        nei_pfs=nei_pfs, k_time=self.w + 1, xyt_problem=xyt_problem)
+                                        # nei_pfs=nei_pfs, k_time=self.w + 1, xyt_problem=xyt_problem)
+                                        nei_pfs=nei_pfs, xyt_problem=xyt_problem)
         if new_plan is not None:
             # pop out the current location, because you will order to move to the next location
             self.plan_succeeded = True
@@ -511,9 +512,9 @@ class AlgParObsPFPrPSeq:
 @use_profiler(save_dir='../stats/alg_par_obs_pf_prp_seq.pstat')
 def main():
     # Alg params
-    # alg_name = 'PrP'
+    alg_name = 'PrP'
     # alg_name = 'PF-PrP'
-    alg_name = 'ParObs-PrP'
+    # alg_name = 'ParObs-PrP'
     # alg_name = 'ParObs-PF-PrP'
 
     params_dict = {
@@ -571,7 +572,7 @@ def main():
         iterations=200,
         # iterations=100,
         # iterations=50,
-        n_agents=250,
+        n_agents=150,
         n_problems=1,
         classical_rhcr_mapf=True,
         # classical_rhcr_mapf=False,

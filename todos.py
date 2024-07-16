@@ -33,14 +33,11 @@ DONE:
 - implement SDS
 - write a paper
 - submit to a conference
+- maybe implement the full LNS2
 
 ##########################################
 ##########################################
 TODO:
-
-- maybe implement the full LNS2
-- examine parameters on different maps
-- maybe implement learning for the PF parameters with RL
 
 ##########################################
 ##########################################

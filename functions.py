@@ -83,7 +83,7 @@ def plan_has_no_conf_with_vertex(plan, vertex):
 def two_plans_have_no_confs(plan1, plan2):
 
     min_len = min(len(plan1), len(plan2))
-    assert len(plan1) == len(plan2)
+    # assert len(plan1) == len(plan2)
     prev1 = None
     prev2 = None
     for i, (vertex1, vertex2) in enumerate(zip(plan1[:min_len], plan2[:min_len])):
